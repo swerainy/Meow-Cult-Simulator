@@ -423,13 +423,37 @@
                 // ====== 💯 重构：安全的 Vue 原生简繁转换方案 ======
                 const isTraditional = ref(localStorage.getItem('mijiao_lang') === 'tw');
                 
-                // 仅在初始化时创建一次转换器函数
-                let cn2tw = (s) => s;
-                let tw2cn = (s) => s;
+                // 1. 获取原生的转换器
+                let raw_cn2tw = (s) => s;
+                let raw_tw2cn = (s) => s;
                 if (typeof OpenCC !== 'undefined') {
-                    cn2tw = OpenCC.Converter({ from: 'cn', to: 'tw' });
-                    tw2cn = OpenCC.Converter({ from: 'tw', to: 'cn' });
+                    raw_cn2tw = OpenCC.Converter({ from: 'cn', to: 'tw' });
+                    raw_tw2cn = OpenCC.Converter({ from: 'tw', to: 'cn' });
                 }
+
+                // 2. 【新增】自定义繁体修正字典 (防机器误伤专有名词)
+                const customTwDict = {
+                    '幹吉': '干吉',
+                    '乾吉': '干吉',
+                    // 如果以后发现其他词被乱转了，可以直接在这里加，比如：
+                    // '錯誤的詞': '正確的詞'
+                };
+
+                // 3. 包装一层我们自己的转换函数
+                const cn2tw = (s) => {
+                    if (!s) return s;
+                    let res = raw_cn2tw(s);
+                    // 遍历字典，强制纠回正确的字
+                    for (const [wrong, right] of Object.entries(customTwDict)) {
+                        res = res.split(wrong).join(right); 
+                    }
+                    return res;
+                };
+
+                const tw2cn = (s) => {
+                    if (!s) return s;
+                    return raw_tw2cn(s);
+                };
 
                 // 核心翻译函数，负责渲染到页面
                 const t = (str) => {
