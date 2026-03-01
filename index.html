@@ -1044,6 +1044,13 @@
                                             });
                                         }
                                     });
+
+                                    acc.agents.sort((a, b) => {
+                                        const indexA = defaultAgents.findIndex(def => def.name === a.name);
+                                        const indexB = defaultAgents.findIndex(def => def.name === b.name);
+                                        return indexA - indexB;
+                                    });
+
                                 });
                                 accounts.value = parsed;
                             } else throw new Error('Data format error');
