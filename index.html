@@ -436,12 +436,12 @@
                             type: 'radar',
                             data: {
                                 labels: STAT_KEYS.map(k => {
-                                    const s = stats[k];
-                                    let label = `${k}:${s.total}`;
-                                    if (s.bonus > 0) label += ` (+${s.bonus})`;
-                                    else if (s.bonus < 0) label += ` (${s.bonus})`;
-                                    return label;
-                                }),
+                                const s = stats[k];
+                                let line1 = `${k}:${s.total}`;
+                                if (s.bonus > 0) return [line1, `(+${s.bonus})`];
+                                if (s.bonus < 0) return [line1, `(${s.bonus})`];
+                                return line1;
+                            }),
                                 datasets: [{ data: STAT_KEYS.map(k => stats[k].total), backgroundColor: 'rgba(171, 65, 51, 0.2)', borderColor: '#e74c3c', borderWidth: 1, pointRadius: 0 }]
                             },
                             options: { responsive: true, maintainAspectRatio: false, scales: { r: { startAngle: 30, min: 0, max: 100, ticks: { display: false }, pointLabels: { font: { size: 9 }, padding: 2 } } }, plugins: { legend: { display: false } } }
@@ -470,12 +470,12 @@
                         if (chart) {
                             const stats = getFinalStats(agent);
                             chart.data.labels = STAT_KEYS.map(k => {
-                                const s = stats[k];
-                                let label = `${k}:${s.total}`;
-                                if (s.bonus > 0) label += ` (+${s.bonus})`;
-                                else if (s.bonus < 0) label += ` (${s.bonus})`;
-                                return label;
-                            });
+                            const s = stats[k];
+                            let line1 = `${k}:${s.total}`;
+                            if (s.bonus > 0) return [line1, `(+${s.bonus})`];
+                            if (s.bonus < 0) return [line1, `(${s.bonus})`];
+                            return line1;
+                        });
                             chart.data.datasets[0].data = STAT_KEYS.map(k => stats[k].total);
                             chart.update();
                         }
