@@ -540,8 +540,8 @@
                     { name: '公孙珊', isUnlocked: false, base: {智慧:10, 魅力:10, 口才:10, 气运:10, 灵感:10, 体魄:10}, skills: { '体健':{type:'体魄', val:[0,5,10,15,20,25], level:0}, '吉星':{type:'气运', val:[0,10,20,25,35,45], level:0}, '仪表不凡':{type:'魅力', val:[0,10,15,25,30,40], level:0} } },
                     { name: '干吉', isUnlocked: false, base: {智慧:15, 魅力:15, 口才:15, 气运:15, 灵感:15, 体魄:15}, skills: { '鬼师':{type:'灵感', val:[0,10,15,25,30,40], level:0}, '巧舌':{type:'口才', val:[0,10,20,25,35,45], level:0}, '体健':{type:'体魄', val:[0,5,10,20,25,30], level:0}, '吉星':{type:'气运', val:[0,5,10,15,20,25], level:0} } },
                     { name: '张飞', isUnlocked: false, brotherhoodEnabled: false, base: {智慧:20, 魅力:20, 口才:20, 气运:20, 灵感:20, 体魄:20}, skills: { '巧舌':{type:'口才', val:[0,5,10,20,25,30], level:0}, '吉星':{type:'气运', val:[0,10,20,25,35,45], level:0}, '体健':{type:'体魄', val:[0,10,15,25,30,40], level:0}, '敏锐':{type:'智慧', val:[0,5,10,15,20,25], level:0} } },
-                    { name: '刘备', isUnlocked: false, base: {智慧:20, 魅力:20, 口才:20, 气运:20, 灵感:20, 体魄:20}, skills: { '辩驳':{type:'口才', val:[0,15,30,50,65,80], level:0, penalty:'气运', pVal:[0,-5,-10,-20,-25,-30]}, '敏锐':{type:'智慧', val:[0,10,15,25,30,40], level:0}, '吉星':{type:'灵感', val:[0,5,10,15,20,25], level:0}, '体健':{type:'体魄', val:[0,5,10,20,25,30], level:0} } },
-                    { name: '关羽', isUnlocked: false, base: {智慧:20, 魅力:20, 口才:20, 气运:20, 灵感:20, 体魄:20}, skills: { '仪表不凡':{type:'魅力', val:[0,10,15,25,30,40], level:0}, '巧舌':{type:'灵感', val:[0,5,10,15,20,25], level:0}, '力能扛鼎':{type:'体魄', val:[0,15,30,50,65,80], level:0, penalty:'口才', pVal:[0,-5,-10,-20,-25,-30]}, '吉星':{type:'气运', val:[0,5,10,20,25,30], level:0} } },
+                    { name: '刘备', isUnlocked: false, base: {智慧:20, 魅力:20, 口才:20, 气运:20, 灵感:20, 体魄:20}, skills: { '辩驳':{type:'口才', val:[0,15,30,50,65,80], level:1, penalty:'气运', pVal:[0,-5,-10,-20,-25,-30]}, '敏锐':{type:'智慧', val:[0,10,15,25,30,40], level:0}, '吉星':{type:'灵感', val:[0,5,10,15,20,25], level:0}, '体健':{type:'体魄', val:[0,5,10,20,25,30], level:0} } },
+                    { name: '关羽', isUnlocked: false, base: {智慧:20, 魅力:20, 口才:20, 气运:20, 灵感:20, 体魄:20}, skills: { '仪表不凡':{type:'魅力', val:[0,10,15,25,30,40], level:0}, '巧舌':{type:'灵感', val:[0,5,10,15,20,25], level:0}, '力能扛鼎':{type:'体魄', val:[0,15,30,50,65,80], level:1, penalty:'口才', pVal:[0,-5,-10,-20,-25,-30]}, '吉星':{type:'气运', val:[0,5,10,20,25,30], level:0} } },
                     { name: '张修', isUnlocked: false, cloneEnabled: false, base: {智慧:15, 魅力:15, 口才:15, 气运:15, 灵感:15, 体魄:15}, skills: { '三眼神':{type:'灵感', val:[0,10,15,25,30,40], level:0}, '仪表不凡':{type:'魅力', val:[0,5,10,15,20,25], level:0}, '机变':{type:'智慧', val:[0,15,30,50,65,80], level:0, penalty:'口才', pVal:[0,-5,-10,-20,-25,-30]}, '吉星':{type:'气运', val:[0,5,10,20,25,30], level:0} } },
                     { name: '史子眇', isUnlocked: false, base: {智慧:10, 魅力:10, 口才:10, 气运:10, 灵感:10, 体魄:10}, skills: { '敏锐':{type:'智慧', val:[0,10,20,25,35,45], level:0}, '隐鸢仙人':{type:'灵感', val:[0,10,15,25,30,40], level:0}, '吉星':{type:'气运', val:[0,5,10,15,20,25], level:0} } },
                     { name: '李脱', isUnlocked: false, base: {智慧:5, 魅力:5, 口才:5, 气运:5, 灵感:5, 体魄:5}, skills: { '仪表不凡':{type:'魅力', val:[0,10,15,25,30,40], level:0}, '巧舌':{type:'口才', val:[0,10,20,25,35,45], level:0} } },
@@ -947,12 +947,18 @@
                             pairs.push([sNames[i], null]); 
                         }
                         
-                        if (!takesSlot) {
+if (!takesSlot) {
                             for(let i=0; i<sNames.length; i++) { 
                                 for(let j=i+1; j<sNames.length; j++) {
                                     pairs.push([sNames[i], sNames[j]]); 
                                 }
                             }
+                        }
+
+                        // 【新增】提前获取该密探在教徒面板中已经解锁了多少个技能
+                        let rosterUnlockedSet = new Set();
+                        for(let i=0; i<sNames.length; i++) {
+                            if (agent.skills[sNames[i]].level > 0) rosterUnlockedSet.add(sNames[i]);
                         }
 
                         pairs.forEach(pair => {
@@ -964,6 +970,27 @@
 
                             for (let lv1 = baseLv1; lv1 <= maxLv1; lv1++) {
                                 for (let lv2 = baseLv2; lv2 <= maxLv2; lv2++) {
+                                    
+                                    // 【新增】核心限制逻辑：有技能可用时，必须填满槽位，不能留空逃课
+                                    let equipped_count = 0;
+                                    let state_unlocked = new Set(rosterUnlockedSet);
+                                    
+                                    if (s1 && lv1 > 0) {
+                                        state_unlocked.add(pair[0]);
+                                        equipped_count++;
+                                    }
+                                    if (s2 && pair[0] !== pair[1] && lv2 > 0) {
+                                        state_unlocked.add(pair[1]);
+                                        equipped_count++;
+                                    }
+                                    
+                                    let max_slots = takesSlot ? 1 : 2;
+                                    let required_equip = Math.min(max_slots, state_unlocked.size);
+                                    
+                                    if (equipped_count < required_equip) {
+                                        continue; // 如果装备的技能数少于理应强制装备的数，跳过此非法组合！
+                                    }
+
                                     let nNeck = 0, nTali = 0;
                                     if(s1 && lv1 > 0 && s1.level === 0) nNeck += 5; 
                                     for(let l=baseLv1+1; l<=lv1; l++) nTali += TALISMAN_COSTS[l];
