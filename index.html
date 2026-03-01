@@ -191,8 +191,11 @@
                         {{ t(ev.name) }}
                         <span class="evt-del-btn" v-if="events.length > 1" @click.stop="removeEvent(idx)" :title="t('删除事件')">&times;</span>
                     </div>
+                    
                     <button class="add-evt-btn" v-if="events.length < 5" @click="addEvent" :title="t('添加新事件')">+ {{ t('新事件') }}</button>
-                </div>
+                    
+                    <button class="add-evt-btn" v-if="events.length > 1" @click="clearAllEvents" style="border-color: #d63031; color: #d63031;" :title="t('清空并重置所有事件')"> {{ t('清空事件') }}</button>
+                    </div>
                 <div style="margin-bottom: 12px; padding: 10px; background: #fafbfc; border-radius: 8px; border: 1px dashed #dcdde1; box-shadow: inset 0 0 4px rgba(0,0,0,0.01);">
                     
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
@@ -712,6 +715,19 @@
                     
                     if(activeEventIndex.value >= events.value.length) activeEventIndex.value = events.value.length - 1;
                     nextTick(updateMainChart);
+                };
+
+                const clearAllEvents = () => {
+                    if (confirm(t('确定要清空所有事件并重置为初始状态吗？'))) {
+                        events.value = [{ 
+                            id: Date.now(), 
+                            name: '事件 1', 
+                            req: { '智慧':5, '魅力':5, '口才':5, '气运':5, '灵感':5, '体魄':5 }, 
+                            maxOnField: 0 
+                        }];
+                        activeEventIndex.value = 0;
+                        nextTick(updateMainChart);
+                    }
                 };
 
                 const switchEvent = (idx) => { activeEventIndex.value = idx; updateMainChart(); };
@@ -1396,7 +1412,7 @@
                 return { 
                     tab, accounts, activeAccountIndex, currentAccount, unlockedBelievers, 
                     statKeys: STAT_KEYS, displayStatKeys: DISPLAY_STAT_KEYS, reqOptions: REQ_OPTIONS,
-                    events, currentEvent, activeEventIndex, addEvent, removeEvent, switchEvent,
+                    events, currentEvent, activeEventIndex, addEvent, removeEvent, switchEvent, clearAllEvents,
                     fieldNames, results, isCalculating, groupSkillsByAgent, getSortedSkillsByLevel,
                     changeTab, clearReq, clearField, autoSelectField, toggleField, applyMultiUpgrade, updateSkill, 
                     addAccount, renameAccount, deleteAccount, exportData, triggerImport, handleImport, updateMainChart, autoCalc,
