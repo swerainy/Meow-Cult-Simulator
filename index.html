@@ -1255,9 +1255,13 @@
                 // 【新增】键盘导航逻辑
                 const focusedSearchIndex = ref(-1);
 
-                // 只要搜索词或搜索结果变了，就把焦点重置归零
-                watch(filteredCloudEvents, () => {
-                    focusedSearchIndex.value = -1;
+                // 只要搜索词或搜索结果变了，就默认自动聚焦到第一个结果
+                watch(filteredCloudEvents, (newVal) => {
+                    if (newVal && newVal.length > 0) {
+                        focusedSearchIndex.value = 0; // 默认选中第一个
+                    } else {
+                        focusedSearchIndex.value = -1;
+                    }
                 });
 
                 const navigateSearch = (direction) => {
