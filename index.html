@@ -293,6 +293,12 @@
                                     </div>
                                 </div>
 
+                                <div v-if="getSolutionWarnings(ep.sol).length > 0" class="skill-tags-container" style="margin-top: 6px;">
+                                    <span v-for="warn in getSolutionWarnings(ep.sol)" :key="warn.agent" class="skill-tag" style="background: #fff0f0; border-color: #ffcdd2; color: #d32f2f;">
+                                        {{ t(warn.agent) }} ❌ {{ t(warn.skillName) }} Lv.{{ warn.level }} <span style="font-size: 0.75rem; opacity: 0.8;">({{ warn.penaltyValue }}{{ t(warn.penaltyType) }})</span> {{ t('注意卸下') }}
+                                    </span>
+                                </div>
+
                             </template>
                             <template v-else>
                                 <div class="ep-title uncompleted">📌 {{ t(ep.eventName) }} <span style="font-weight: normal; font-size:0.75rem; margin-left: auto;">({{ t('如果无法全部完成，优先保证其他事件') }})</span></div>
@@ -619,6 +625,38 @@
                         }
                     });
                     return Object.keys(map).map(agent => ({ agent, skills: map[agent] }));
+                };
+
+                // 【新增】智能检测该方案中需要卸下的危险负面技能
+                const getSolutionWarnings = (sol) => {
+                    if (!currentAccount.value || !sol || !sol.names) return [];
+                    const dangerMap = { '张修': '机变', '关羽': '力能扛鼎', '张角': '谋算', '刘备': '辩驳' };
+                    let warnings = [];
+                    
+                    const uniqueBaseNames = [...new Set(sol.names.map(n => n.replace('(分身)', '')))];
+                    
+                    uniqueBaseNames.forEach(baseName => {
+                        if (dangerMap[baseName]) {
+                            const skillName = dangerMap[baseName];
+                            const isUsed = sol.skillDetails && sol.skillDetails.some(sk => sk.agent.replace('(分身)', '') === baseName && sk.skill === skillName);
+                            
+                            // 只有当该技能未被方案使用，且玩家在名册里确实升级了该技能时，才提示卸下
+                            if (!isUsed) {
+                                const agent = currentAccount.value.agents.find(a => a.name === baseName);
+                                if (agent && agent.skills[skillName] && agent.skills[skillName].level > 0) {
+                                    const sk = agent.skills[skillName];
+                                    warnings.push({
+                                        agent: baseName,
+                                        skillName: skillName,
+                                        level: sk.level,
+                                        penaltyType: sk.penalty,
+                                        penaltyValue: sk.pVal[sk.level] // 获取负面扣除的具体数值
+                                    });
+                                }
+                            }
+                        }
+                    });
+                    return warnings;
                 };
 
                 const addEvent = () => {
@@ -1259,7 +1297,7 @@
                     changeTab, clearReq, clearField, autoSelectField, toggleField, applyMultiUpgrade, updateSkill, 
                     addAccount, renameAccount, deleteAccount, exportData, triggerImport, handleImport, updateMainChart, autoCalc,
                     handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents,
-                    
+                    groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
                     isTraditional, toggleLang, t
                 };
             }
