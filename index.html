@@ -144,7 +144,7 @@
             transition: 0.2s; display: flex; align-items: center; justify-content: space-between;
         }
         .search-dropdown li:last-child { border-bottom: none; }
-        .search-dropdown li:hover { background: #f8f9fa; color: var(--primary); }
+        .search-dropdown li:hover, .search-dropdown li.focused { background: #f8f9fa; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -197,10 +197,19 @@
                     </div>
                     
                     <div style="position: relative;">
-                        <input type="text" v-model="searchQuery" :placeholder="t('🔍 搜索云端事件 (支持拼音首字母，如 \'sytx\')')" @focus="fetchCloudEvents" style="width: 100%; padding: 6px 10px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
+                        <input type="text" v-model="searchQuery" :placeholder="t('🔍 搜索云端事件 (支持拼音首字母，如 \'sytx\')')" 
+                               @focus="fetchCloudEvents" 
+                               @keydown.down.prevent="navigateSearch(1)"
+                               @keydown.up.prevent="navigateSearch(-1)"
+                               @keydown.tab.prevent="navigateSearch(1)"
+                               @keydown.enter.prevent="selectFocusedSearch"
+                               style="width: 100%; padding: 6px 10px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
                         
                         <ul v-if="searchQuery && filteredCloudEvents.length > 0" class="search-dropdown">
-                            <li v-for="(ce, idx) in filteredCloudEvents" :key="ce._id || idx" @click="applyCloudEvent(ce)">
+                            <li v-for="(ce, idx) in filteredCloudEvents" :key="ce._id || idx" 
+                                :class="{'focused': focusedSearchIndex === idx}"
+                                @mouseover="focusedSearchIndex = idx"
+                                @click="applyCloudEvent(ce)">
                                 <strong>{{ t(ce.name) }}</strong>
                                 <span style="font-size: 0.7rem; color: #636e72;">({{ t('上场:') }}{{ ce.maxOnField }}{{ t('人') }})</span>
                             </li>
@@ -1242,6 +1251,50 @@
                     searchQuery.value = ''; 
                     updateMainChart(); 
                 };
+                
+                // 【新增】键盘导航逻辑
+                const focusedSearchIndex = ref(-1);
+
+                // 只要搜索词或搜索结果变了，就把焦点重置归零
+                watch(filteredCloudEvents, () => {
+                    focusedSearchIndex.value = -1;
+                });
+
+                const navigateSearch = (direction) => {
+                    if (filteredCloudEvents.value.length === 0) return;
+                    
+                    focusedSearchIndex.value += direction;
+                    // 触底循环到顶部，触顶循环到底部
+                    if (focusedSearchIndex.value >= filteredCloudEvents.value.length) {
+                        focusedSearchIndex.value = 0; 
+                    } else if (focusedSearchIndex.value < 0) {
+                        focusedSearchIndex.value = filteredCloudEvents.value.length - 1; 
+                    }
+
+                    // 自动计算滚动条跟随
+                    nextTick(() => {
+                        const list = document.querySelector('.search-dropdown');
+                        const activeItem = list?.querySelector('.focused');
+                        if (list && activeItem) {
+                            const activeTop = activeItem.offsetTop;
+                            const activeBottom = activeTop + activeItem.offsetHeight;
+                            const viewTop = list.scrollTop;
+                            const viewBottom = viewTop + list.clientHeight;
+                            
+                            if (activeTop < viewTop) {
+                                list.scrollTop = activeTop; // 往上滚
+                            } else if (activeBottom > viewBottom) {
+                                list.scrollTop = activeBottom - list.clientHeight; // 往下滚
+                            }
+                        }
+                    });
+                };
+
+                const selectFocusedSearch = () => {
+                    if (focusedSearchIndex.value >= 0 && focusedSearchIndex.value < filteredCloudEvents.value.length) {
+                        applyCloudEvent(filteredCloudEvents.value[focusedSearchIndex.value]);
+                    }
+                };
 
                 onMounted(() => {
                     document.addEventListener('click', (e) => {
@@ -1326,6 +1379,7 @@
                     changeTab, clearReq, clearField, autoSelectField, toggleField, applyMultiUpgrade, updateSkill, 
                     addAccount, renameAccount, deleteAccount, exportData, triggerImport, handleImport, updateMainChart, autoCalc,
                     handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents,
+                    focusedSearchIndex, navigateSearch, selectFocusedSearch,
                     groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
                     isTraditional, toggleLang, t
                 };
