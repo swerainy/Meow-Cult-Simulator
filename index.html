@@ -645,8 +645,8 @@
                             // 检查危险技能是否已被方案使用
                             const isUsed = agentSkillsInSol.some(sk => sk.skill === skillName);
                             
-                            // 【新增核心逻辑】计算该密探在此方案中已经占用的技能槽位数量（注意：分身能力本身不占普通技能槽）
-                            const usedSlots = agentSkillsInSol.filter(sk => sk.skill !== '化身 (分身)').length;
+                            // 【修正】分身（化身）和羁绊（手足情）其实在游戏里也是实打实占用 1 个槽位的！直接算总数
+                            const usedSlots = agentSkillsInSol.length;
                             
                             // 触发警告的条件：
                             // 1. 危险技能没有被方案要求带上
