@@ -1009,7 +1009,7 @@
 
                 const shareEventToServer = async () => {
                     const ev = currentEvent.value;
-                    const name = ev.name ? ev.name.trim() : "";
+                    let name = ev.name ? ev.name.trim() : "";
 
                     // 【新增】在校验和上传前，自动将用户输入的繁体字转为简体
                     if (typeof tw2cn !== 'undefined') {
