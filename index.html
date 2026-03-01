@@ -997,9 +997,27 @@
                     let abort = false;
                     let dfsCounter = 0;
 
+                    // 【新增】智能剪枝：预处理后续密探理论能提供的最大属性加成
+                    let suffixMax = Array(combo.length + 1).fill(null).map(() => [0,0,0,0,0,0]);
+                    for (let i = combo.length - 1; i >= 0; i--) {
+                        for (let j = 0; j < 6; j++) {
+                            let maxD = 0;
+                            for (let st of agentStatesList[i]) {
+                                if (st.delta[j] > maxD) maxD = st.delta[j];
+                            }
+                            suffixMax[i][j] = suffixMax[i+1][j] + maxD;
+                        }
+                    }
+
                     const dfs = (idx, currentCost, currentNeck, currentTali) => {
                         if (abort) return;
-                        if (dfsCounter++ > 5000) { abort = true; return; } 
+                        // 【修改】大幅放宽搜索上限，从 5000 提升至 300000，防止算一半放弃
+                        if (dfsCounter++ > 300000) { abort = true; return; } 
+
+                        // 【新增核心逻辑】如果当前属性 + 后面所有人能提供的极限属性，依然达不到目标，直接淘汰这条死路！
+                        for (let j = 0; j < 6; j++) {
+                            if (currentStats[j] + suffixMax[idx][j] < targetStats[j]) return;
+                        }
 
                         if (idx === combo.length) {
                             for (let i=0; i<6; i++) if (currentStats[i] < targetStats[i]) return;
