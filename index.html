@@ -944,7 +944,14 @@
                     try {
                         const res = await fetch('https://mfqptanikc.sealosbja.site/getEvents');
                         const data = await res.json();
-                        cloudEvents.value = data;
+                        
+                        // 确保后端返回的是一个数组，再赋值给本地变量
+                        if (Array.isArray(data)) {
+                            cloudEvents.value = data;
+                        } else if (data && Array.isArray(data.data)) {
+                            // 如果你后端返回的是 { code: 200, data: [...] } 这种格式
+                            cloudEvents.value = data.data; 
+                        }
                     } catch (error) {
                         console.error('获取云端事件失败', error);
                     }
