@@ -290,7 +290,7 @@
                                 <span style="display: flex; align-items: center; gap: 4px;">🤝 手足情 <span style="font-size: 0.65rem; color: #f57c00; font-weight: normal;">(羁绊机制)</span></span>
                                 <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
                                     <input type="checkbox" v-model="agent.brotherhoodEnabled" @change="autoCalc">
-                                    <span :style="{ color: agent.brotherhoodEnabled ? '#f57c00' : '#888' }">{{ agent.brotherhoodEnabled ? '已开启' : '未开启' }}</span>
+                                    <span :style="{ color: agent.brotherhoodEnabled ? '#f57c00' : '#888' }">{{ agent.brotherhoodEnabled ? '已解锁' : '未解锁' }}</span>
                                 </label>
                             </div>
                             <div v-show="agent.brotherhoodEnabled" style="font-size: 0.65rem; color: #555; margin-top: 6px; border-top: 1px dashed #ffcc80; padding-top: 6px;">
