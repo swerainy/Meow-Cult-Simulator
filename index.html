@@ -638,10 +638,21 @@
                     uniqueBaseNames.forEach(baseName => {
                         if (dangerMap[baseName]) {
                             const skillName = dangerMap[baseName];
-                            const isUsed = sol.skillDetails && sol.skillDetails.some(sk => sk.agent.replace('(分身)', '') === baseName && sk.skill === skillName);
                             
-                            // 只有当该技能未被方案使用，且玩家在名册里确实升级了该技能时，才提示卸下
-                            if (!isUsed) {
+                            // 提取当前方案中该密探被分配的所有技能
+                            const agentSkillsInSol = sol.skillDetails ? sol.skillDetails.filter(sk => sk.agent.replace('(分身)', '') === baseName) : [];
+                            
+                            // 检查危险技能是否已被方案使用
+                            const isUsed = agentSkillsInSol.some(sk => sk.skill === skillName);
+                            
+                            // 【新增核心逻辑】计算该密探在此方案中已经占用的技能槽位数量（注意：分身能力本身不占普通技能槽）
+                            const usedSlots = agentSkillsInSol.filter(sk => sk.skill !== '化身 (分身)').length;
+                            
+                            // 触发警告的条件：
+                            // 1. 危险技能没有被方案要求带上
+                            // 2. 玩家在教徒列表里确实升级了这个危险技能（等级>0）
+                            // 3. 该密探被分配的其他技能 < 2 个（即还有空余槽位，玩家可能手滑带错。如果槽位已满，玩家物理上不可能带错，无需提醒）
+                            if (!isUsed && usedSlots < 2) {
                                 const agent = currentAccount.value.agents.find(a => a.name === baseName);
                                 if (agent && agent.skills[skillName] && agent.skills[skillName].level > 0) {
                                     const sk = agent.skills[skillName];
@@ -650,7 +661,7 @@
                                         skillName: skillName,
                                         level: sk.level,
                                         penaltyType: sk.penalty,
-                                        penaltyValue: sk.pVal[sk.level] // 获取负面扣除的具体数值
+                                        penaltyValue: sk.pVal[sk.level] 
                                     });
                                 }
                             }
