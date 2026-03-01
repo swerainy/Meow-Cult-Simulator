@@ -749,7 +749,7 @@
                                     if (a.necklaces !== b.necklaces) return a.necklaces - b.necklaces;
                                     if (a.talismans !== b.talismans) return a.talismans - b.talismans;
                                     return a.totalAgents - b.totalAgents;
-                                }).slice(0, 5); 
+                                }); 
                                 
                             } finally { isCalculating.value = false; }
                         }, 10);
@@ -1008,10 +1008,13 @@
                 });
 
                 const fetchCloudEvents = async () => {
-                    if (cloudEvents.value.length > 0) return; 
-
+                    // 1. 【已删除】去掉了 if 拦截，只要点击搜索框，就重新获取
+                    
                     try {
-                        const res = await fetch('https://mfqptanikc.sealosbja.site/getEvents');
+                        // 2. 【修改】在网址后面加上随机时间戳，并设置 no-store，彻底粉碎浏览器的缓存机制！
+                        const res = await fetch(`https://mfqptanikc.sealosbja.site/getEvents?t=${Date.now()}`, {
+                            cache: 'no-store' 
+                        });
                         const data = await res.json();
                         
                         if (Array.isArray(data)) {
