@@ -966,6 +966,12 @@
                         return;
                     }
 
+                    const isAllFive = STAT_KEYS.every(k => ev.req[k] === 5);
+                    if (isAllFive) {
+                        alert('提示：请设置事件的属性要求，不能全为 5。');
+                        return;
+                    }
+                    
                     // 2. 【新增】中文校验：只能包含中文字符
                     const chineseRegex = /^[\u4e00-\u9fa5]+$/;
                     if (!chineseRegex.test(name)) {
