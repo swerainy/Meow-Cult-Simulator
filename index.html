@@ -1093,10 +1093,10 @@
                         return;
                     }
 
-                    const blockedWords = ['集市', '山间', '乡野', '普通', '龙女', '粮草'];
+                    const blockedWords = ['集市', '山间', '乡野', '普通', '龙女', '粮草', '蝗蝗'];
                     const containsBlockedWord = blockedWords.some(word => name.includes(word));
                     if (containsBlockedWord) {
-                        alert(t('提示：事件名称中包含了不允许的词汇（如：集市、山间等），请修改后再上传。'));
+                        alert(t('提示：请输入正确的事件名称而不是分线的名称。同时注意错别字。'));
                         return;
                     }
 
