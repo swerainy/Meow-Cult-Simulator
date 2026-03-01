@@ -1070,7 +1070,9 @@
                 };
 
                 const applyCloudEvent = (ce) => {
-                    currentEvent.value.name = ce.name;
+                    // 【修改】用 t() 函数包裹，如果当前是繁体模式，拉取下来时自动转成繁体填入输入框
+                    currentEvent.value.name = t(ce.name);
+                    
                     STAT_KEYS.forEach(k => {
                         currentEvent.value.req[k] = Number(ce.req[k]) || 5;
                     });
