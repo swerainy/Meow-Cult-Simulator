@@ -680,14 +680,20 @@
                         if (brotherhoodActive) takesSlot = true; // 张飞羁绊占用
 
                         // 生成能力组合
-                        for(let i=0; i<sNames.length; i++) pairs.push([sNames[i], sNames[i]]); // 仅选1个能力
+                        pairs.push([null, null]); // 允许0个能力（仅提供基础属性，不触发任何扣减惩罚）
+
+                        for(let i=0; i<sNames.length; i++) {
+                            pairs.push([sNames[i], null]); // 仅选1个能力，用 null 替代重复的技能名，防止循环被跳过
+                        }
+                        
                         if (!takesSlot) {
                             // 如果不占用能力位，则可以任选2个不重复的能力组合
                             for(let i=0; i<sNames.length; i++) { 
-                                for(let j=i+1; j<sNames.length; j++) pairs.push([sNames[i], sNames[j]]); 
+                                for(let j=i+1; j<sNames.length; j++) {
+                                    pairs.push([sNames[i], sNames[j]]); 
+                                }
                             }
                         }
-                        if(pairs.length === 0) pairs.push([null, null]);
 
                         pairs.forEach(pair => {
                             const s1 = pair[0] ? agent.skills[pair[0]] : null;
