@@ -304,9 +304,16 @@
                     </div>
                 </div>
                 
-                <div v-else-if="fieldNames.length > 0 && !isCalculating" class="empty-state">
+                <div v-else-if="(fieldNames.length > 0 || events.some(e => e.maxOnField == 0)) && !isCalculating" class="empty-state">
                     <strong style="font-size: 0.9rem; color: #d63031;">🚫 当前无可用方案</strong>
-                    <p style="margin: 6px 0 0 0; font-size: 0.75rem; color: #636e72;">请尝试选择更多、高等级的密探上场，或者选择更简单的事件。</p>
+                    
+                    <p v-if="events.some(e => e.maxOnField == 0)" style="margin: 6px 0 0 0; font-size: 0.75rem; color: #d63031; font-weight: bold;">
+                        请检查事件上场人数上限。
+                    </p>
+                    
+                    <p v-else style="margin: 6px 0 0 0; font-size: 0.75rem; color: #636e72;">
+                        请尝试选择更多、高等级的密探上场，或者选择更简单的事件。
+                    </p>
                 </div>
             </div>
         </div>
@@ -599,6 +606,13 @@
                     if (calcDebounce) clearTimeout(calcDebounce);
                     calcDebounce = setTimeout(() => {
                         if (fieldNames.value.length === 0 || events.value.length === 0) { results.value = []; return; }
+                        
+                        if (events.value.some(ev => ev.maxOnField === 0)) {
+                            results.value = [];
+                            isCalculating.value = false;
+                            return;
+                        }
+
                         isCalculating.value = true;
                         
                         setTimeout(() => {
