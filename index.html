@@ -952,31 +952,43 @@
                 // 函数：上传当前事件到你的服务器
                 const shareEventToServer = async () => {
                     const ev = currentEvent.value;
-                    if (!ev.name || ev.name.trim().startsWith('事件 ')) {
-                        alert('请先在输入框中给事件起一个明确的名字！');
+                    const name = ev.name ? ev.name.trim() : "";
+
+                    // 1. 基本非空校验
+                    if (!name || name.startsWith('事件 ')) {
+                        alert('请先给事件起一个明确的名字！');
+                        return;
+                    }
+
+                    // 2. 【新增】中文校验：只能包含中文字符
+                    const chineseRegex = /^[\u4e00-\u9fa5]+$/;
+                    if (!chineseRegex.test(name)) {
+                        alert('事件名称必须全部使用中文，不能包含数字、字母或特殊符号。');
                         return;
                     }
 
                     try {
                         const payload = {
-                            name: ev.name,
+                            name: name,
                             req: ev.req,
                             maxOnField: ev.maxOnField
                         };
 
-                        // 把这里换成你刚刚复制的 addEvent 链接！
                         await fetch('https://mfqptanikc.sealosbja.site/addEvent', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
 
-                        alert(`事件【${ev.name}】已成功共享至云端！`);
+                        alert(`事件【${name}】已成功共享至云端！`);
                         
-                        // 上传成功后，把它也塞进本地的列表里，方便立刻搜到
-                        cloudEvents.value.push(payload);
+                        // 更新本地搜索列表
+                        const existIdx = cloudEvents.value.findIndex(c => c.name === name);
+                        if (existIdx > -1) cloudEvents.value[existIdx] = payload;
+                        else cloudEvents.value.push(payload);
+
                     } catch (error) {
-                        alert('上传失败，请检查网络或控制台报错。');
+                        alert('上传失败，请检查网络。');
                     }
                 };
 
