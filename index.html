@@ -464,6 +464,16 @@
                 const toggleLang = () => {
                     isTraditional.value = !isTraditional.value;
                     localStorage.setItem('mijiao_lang', isTraditional.value ? 'tw' : 'cn');
+                    
+                    // 【新增】自动将输入框里现有的事件名称也进行简繁转换
+                    if (typeof cn2tw !== 'undefined' && typeof tw2cn !== 'undefined') {
+                        events.value.forEach(ev => {
+                            if (ev.name) {
+                                ev.name = isTraditional.value ? cn2tw(ev.name) : tw2cn(ev.name);
+                            }
+                        });
+                    }
+                    
                     updateChartLabels(); // 同步更新雷达图文字
                 };
                 // ======================================
