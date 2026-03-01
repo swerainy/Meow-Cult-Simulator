@@ -29,7 +29,7 @@
         /* 导航栏与提示 */
         .account-bar { background: #2d3436; color: white; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .account-bar .logo { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; display: flex; align-items: center; }
-        .notice-badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 4px; background: #ffeaa7; color: #d63031; font-weight: bold; cursor: help; border: 1px solid #fdcb6e; margin-left: 12px; }
+        .notice-badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 4px; background: #ffeaa7; color: #d63031; font-weight: bold; cursor: help; border: 1px solid #fdcb6e; margin-left: 12px; transition: 0.2s; cursor: pointer; }
         .account-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .account-controls select { padding: 6px 12px; border-radius: 6px; border: none; outline: none; background: #fff; font-weight: bold; }
         
@@ -98,13 +98,13 @@
         .btn-ghost { background: transparent; border: 1px solid #b2bec3; color: #636e72; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; }
         .btn-ghost:hover { background: #f1f2f6; color: #2d3436; border-color: #636e72; }
 
-        /* 浮动提示UI */
+        /* 浮动提示UI：同时兼容点击(show-tt类)和悬停(:hover) */
         .tooltip-ui { position: relative; }
         .tooltip-ui::before { content: attr(data-tooltip); position: absolute; background: #2d3436; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; width: max-content; max-width: 250px; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 16px rgba(0,0,0,0.15); border: 1px solid #636e72; pointer-events: none; text-align: left; font-weight: normal; line-height: 1.5; white-space: pre-wrap; }
         .tooltip-ui.tt-bottom::before { top: 130%; left: 0; transform: translateY(-5px); }
-        .tooltip-ui.tt-bottom:hover::before { opacity: 1; visibility: visible; transform: translateY(0); }
+        .tooltip-ui.tt-bottom.show-tt::before, .tooltip-ui.tt-bottom:hover::before { opacity: 1; visibility: visible; transform: translateY(0); }
         .tooltip-ui.tt-left::before { top: 50%; right: 120%; transform: translateY(-50%) translateX(5px); }
-        .tooltip-ui.tt-left:hover::before { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
+        .tooltip-ui.tt-left.show-tt::before, .tooltip-ui.tt-left:hover::before { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
 
         .empty-state { text-align: center; padding: 24px 12px; background: #fafbfc; border: 1px dashed #dfe6e9; border-radius: 8px; margin-top: 10px; }
         .event-path-block { margin-top: 10px; padding: 12px; background: white; border-radius: 8px; border: 1px solid #dfe6e9; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
@@ -114,6 +114,21 @@
         /* 列表平滑过渡动画 */
         .list-move, .list-enter-active, .list-leave-active { transition: all 0.4s ease; }
         .list-enter-from, .list-leave-to { opacity: 0; transform: translateY(10px); }
+
+        /* 卡片展开/收起过渡动画 */
+        .expand-enter-active, 
+        .expand-leave-active {
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 500px; 
+            opacity: 1;
+            overflow: hidden;
+        }
+        .expand-enter-from, 
+        .expand-leave-to {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
@@ -121,7 +136,7 @@
         <div class="account-bar">
             <div class="logo">
                 🐈‍⬛ 咪教模拟器
-                <span class="notice-badge tooltip-ui tt-bottom" data-tooltip="⚠️ 注意事项：本网页数据保存在浏览器本地，请尽量避免在微信内直接打开，以免缓存被清理导致数据丢失。跨设备请务必使用「导出/导入」功能。">注意事项</span>
+                <span class="notice-badge tooltip-ui tt-bottom" :class="{'show-tt': showNotice}" @click.stop="toggleNotice" data-tooltip="⚠️ 注意事项：本网页数据保存在浏览器本地，请尽量避免在微信内直接打开，以免缓存被清理导致数据丢失。跨设备请务必使用「导出/导入」功能。">注意事项</span>
             </div>
             <div class="account-controls">
                 <span style="font-size: 0.85rem;">存档：</span>
@@ -261,8 +276,9 @@
         <div v-show="tab === 'roster'">
             <div class="agent-grid">
                 <div v-for="(agent, idx) in (currentAccount ? currentAccount.agents : [])" :key="agent.name" 
-                     class="agent-card" :class="{unlocked: agent.isUnlocked}">
-                    <div class="agent-name" @click="agent.isUnlocked = !agent.isUnlocked" style="cursor:pointer;">
+                     class="agent-card" :class="{unlocked: agent.isUnlocked}"
+                     @click="toggleAgentLock(agent, $event)" style="cursor: pointer;">
+                    <div class="agent-name">
                         <span>{{ agent.name }}</span>
                         <span class="status-badge" :class="{active: agent.isUnlocked}">{{ agent.isUnlocked ? '已解锁' : '未解锁' }}</span>
                     </div>
@@ -271,6 +287,7 @@
                         <canvas :id="'agentRadar-' + idx"></canvas>
                     </div>
 
+                <transition name="expand">
                     <div v-if="agent.isUnlocked">
                         <div v-if="agent.name === '张修'" class="skill-item" style="background: #e8f5e9; border: 1px solid #27ae60; margin-bottom: 8px;">
                             <div class="skill-label">
@@ -317,6 +334,7 @@
                             </div>
                         </transition-group>
                     </div>
+                </transition>
                 </div>
             </div>
         </div>
@@ -349,6 +367,9 @@
                 let mainChart = null;
                 let agentCharts = {};
                 let calcDebounce = null;
+                
+                const showNotice = ref(false);
+                const toggleNotice = () => { showNotice.value = !showNotice.value; };
 
                 const createDefaultAgents = () => [
                     { name: '刘辩', isUnlocked: false, base: {智慧:35, 魅力:35, 口才:35, 气运:35, 灵感:35, 体魄:35}, skills: { '巧舌':{type:'口才', val:[0,10,20,25,35,45], level:0}, '敏锐':{type:'智慧', val:[0,5,10,20,25,30], level:0}, '吉星':{type:'气运', val:[0,5,10,15,20,25], level:0}, '仪表不凡':{type:'魅力', val:[0,10,15,25,30,40], level:0} } },
@@ -428,6 +449,20 @@
                     });
                 };
                 
+                const toggleAgentLock = (agent, e) => {
+                    // 如果点击的是内部控件（按钮或勾选框标签），则不触发锁定/解锁，避免误触
+                    if (e.target.closest('button, input, label')) return;
+                    
+                    agent.isUnlocked = !agent.isUnlocked;
+                    
+                    // 如果操作是把原本解锁的教徒锁定了，那要顺便把TA从出战列表里拿下来
+                    if (!agent.isUnlocked) {
+                        const idx = fieldNames.value.indexOf(agent.name);
+                        if (idx > -1) fieldNames.value.splice(idx, 1);
+                    }
+                    autoCalc();
+                };
+
                 const updateSkill = (agent, sData, lv, idx) => {
                     sData.level = lv;
                     nextTick(() => {
@@ -830,6 +865,13 @@
                 };
 
                 onMounted(() => {
+                    // 全局点击事件：用于点击其他地方收起“注意事项”弹出框
+                    document.addEventListener('click', (e) => {
+                        if (!e.target.closest('.notice-badge')) {
+                            showNotice.value = false;
+                        }
+                    });
+
                     try {
                         const s = localStorage.getItem('mijiao_v11_data');
                         if (s) {
@@ -896,7 +938,7 @@
                     fieldNames, results, isCalculating, groupSkillsByAgent, getSortedSkillsByLevel,
                     changeTab, clearReq, clearField, autoSelectField, toggleField, applyMultiUpgrade, updateSkill, 
                     addAccount, renameAccount, deleteAccount, exportData, triggerImport, handleImport, updateMainChart, autoCalc,
-                    handleStatWheel, handleMaxFieldWheel
+                    handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice
                 };
             }
         }).mount('#app');
