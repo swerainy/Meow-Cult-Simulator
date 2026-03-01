@@ -745,9 +745,40 @@
                                 dfsMulti(0, 0, new Set(), 0, 0, 0, []);
                                 
                                 results.value = topResults.sort((a, b) => {
+                                    // 1. 优先比拼完成的事件数量（越多越好）
                                     if (a.completedCount !== b.completedCount) return b.completedCount - a.completedCount;
+                                    // 2. 其次比拼资源消耗（越少越好）
                                     if (a.necklaces !== b.necklaces) return a.necklaces - b.necklaces;
                                     if (a.talismans !== b.talismans) return a.talismans - b.talismans;
+                                    
+                                    // 3. 【新增】张修分身权重系统
+                                    const zx = currentAccount.value.agents.find(agent => agent.name === '张修');
+                                    const zxHasClone = zx ? zx.cloneEnabled : false;
+                                    
+                                    const getWeight = (r) => {
+                                        let w = 0;
+                                        r.eventPaths.forEach(ep => {
+                                            if (ep.isCompleted && ep.sol && ep.sol.names) {
+                                                ep.sol.names.forEach(n => {
+                                                    // 如果张修解锁了分身，他的隐藏成本（权重）相当于 2.1 个人
+                                                    if (n === '张修' && zxHasClone) w += 2.1; 
+                                                    // 分身依附于本体，不再额外增加成本
+                                                    else if (n === '张修(分身)') w += 0; 
+                                                    // 普通教徒成本为 1 个人
+                                                    else w += 1.0; 
+                                                });
+                                            }
+                                        });
+                                        return w;
+                                    };
+                                    
+                                    const wA = getWeight(a);
+                                    const wB = getWeight(b);
+                                    
+                                    // 权重越小越优先（2个人=2.0，张修带分身=2.1。2.0 < 2.1，所以2个人排前面！）
+                                    if (wA !== wB) return wA - wB;
+
+                                    // 4. 如果权重也一样，兜底比较上场的总人数
                                     return a.totalAgents - b.totalAgents;
                                 }).slice(0, 20); 
                                 
