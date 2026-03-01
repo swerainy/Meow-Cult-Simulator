@@ -749,7 +749,7 @@
                                     if (a.necklaces !== b.necklaces) return a.necklaces - b.necklaces;
                                     if (a.talismans !== b.talismans) return a.talismans - b.talismans;
                                     return a.totalAgents - b.totalAgents;
-                                }); 
+                                }).slice(0, 20); 
                                 
                             } finally { isCalculating.value = false; }
                         }, 10);
@@ -1003,7 +1003,7 @@
 
                         // 【新增安全校验】如果数据库里有缺少名字的残缺数据，直接跳过它，防止整个搜索系统崩溃！
                         if (!name || typeof name !== 'string') return false;
-                        
+
                         if (name.includes(safeQuery)) return true;
                         const pyInitials = pinyin(name, { pattern: 'first', toneType: 'none', type: 'array' }).join('').toLowerCase();
                         if (pyInitials.includes(safeQuery)) return true;
