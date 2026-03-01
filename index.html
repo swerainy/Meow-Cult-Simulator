@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/pinyin-pro"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js"></script>
     <style>
         :root {
             --primary: #AB4133; 
@@ -131,7 +132,7 @@
             margin-top: 0;
         }
 
-        /* 新增：搜索下拉框样式 */
+        /* 搜索下拉框样式 */
         .search-dropdown { 
             position: absolute; top: 100%; left: 0; right: 0; background: white; 
             border: 1px solid #dfe6e9; border-radius: 6px; max-height: 200px; 
@@ -150,139 +151,142 @@
     <div id="app" class="container">
         <div class="account-bar">
             <div class="logo">
-                🐈‍⬛ 咪教模拟器
-                <span class="notice-badge tooltip-ui tt-bottom" :class="{'show-tt': showNotice}" @click.stop="toggleNotice" data-tooltip="⚠️ 注意事项：本网页数据保存在浏览器本地，请尽量避免在微信内直接打开，以免缓存被清理导致数据丢失。同时注意浏览器不要开启无痕模式。跨设备请务必使用「导出/导入」功能。">注意事项</span>
+                🐈‍⬛ {{ t('咪教模拟器') }}
+                <span class="notice-badge tooltip-ui tt-bottom" :class="{'show-tt': showNotice}" @click.stop="toggleNotice" :data-tooltip="t('⚠️ 注意事项：本网页数据保存在浏览器本地，请尽量避免在微信内直接打开，以免缓存被清理导致数据丢失。同时注意浏览器不要开启无痕模式。跨设备请务必使用「导出/导入」功能。')">{{ t('注意事项') }}</span>
             </div>
             <div class="account-controls">
-                <span style="font-size: 0.85rem;">存档：</span>
+                <button class="btn-small tooltip-ui tt-bottom" style="background: #2d3436; color: #fdcb6e; border: 1px solid #fdcb6e; padding: 4px 10px;" @click="toggleLang" :data-tooltip="t('切换简体/繁体中文')">
+                    {{ isTraditional ? t('繁') : t('简') }}
+                </button>
+                <span style="font-size: 0.85rem;">{{ t('存档：') }}</span>
                 <select v-model="activeAccountIndex" v-if="accounts.length > 0">
-                    <option v-for="(acc, i) in accounts" :key="i" :value="i">{{ acc.name }}</option>
+                    <option v-for="(acc, i) in accounts" :key="i" :value="i">{{ t(acc.name) }}</option>
                 </select>
                 <div class="btn-group">
-                    <button class="btn-small btn-add" @click="addAccount">+ 新增</button>
-                    <button class="btn-small btn-edit" @click="renameAccount" v-show="accounts.length > 0">✏️ 改名</button>
-                    <button class="btn-small btn-export" @click="exportData">📤 导出</button>
-                    <button class="btn-small btn-import" @click="triggerImport">📥 导入</button>
-                    <button class="btn-small btn-del" @click="deleteAccount" v-show="accounts.length > 1">删除</button>
+                    <button class="btn-small btn-add" @click="addAccount">+ {{ t('新增') }}</button>
+                    <button class="btn-small btn-edit" @click="renameAccount" v-show="accounts.length > 0">✏️ {{ t('改名') }}</button>
+                    <button class="btn-small btn-export" @click="exportData">📤 {{ t('导出') }}</button>
+                    <button class="btn-small btn-import" @click="triggerImport">📥 {{ t('导入') }}</button>
+                    <button class="btn-small btn-del" @click="deleteAccount" v-show="accounts.length > 1">{{ t('删除') }}</button>
                 </div>
             </div>
             <input type="file" ref="importFileInput" style="display:none" @change="handleImport" accept=".json">
         </div>
 
         <div class="tabs">
-            <button class="tab-btn" :class="{active: tab === 'sim'}" @click="changeTab('sim')">事件模拟</button>
-            <button class="tab-btn" :class="{active: tab === 'roster'}" @click="changeTab('roster')">教徒管理</button>
+            <button class="tab-btn" :class="{active: tab === 'sim'}" @click="changeTab('sim')">{{ t('事件模拟') }}</button>
+            <button class="tab-btn" :class="{active: tab === 'roster'}" @click="changeTab('roster')">{{ t('教徒管理') }}</button>
         </div>
 
         <div v-show="tab === 'sim'" class="sim-layout">
             <div class="panel">
                 <div class="event-tabs">
                     <div v-for="(ev, idx) in events" :key="ev.id" class="evt-tab" :class="{active: activeEventIndex === idx}" @click="switchEvent(idx)">
-                        {{ ev.name }}
-                        <span class="evt-del-btn" v-if="events.length > 1" @click.stop="removeEvent(idx)" title="删除事件">&times;</span>
+                        {{ t(ev.name) }}
+                        <span class="evt-del-btn" v-if="events.length > 1" @click.stop="removeEvent(idx)" :title="t('删除事件')">&times;</span>
                     </div>
-                    <button class="add-evt-btn" v-if="events.length < 5" @click="addEvent" title="添加新事件">+ 新事件</button>
+                    <button class="add-evt-btn" v-if="events.length < 5" @click="addEvent" :title="t('添加新事件')">+ {{ t('新事件') }}</button>
                 </div>
                 <div style="margin-bottom: 12px; padding: 10px; background: #fafbfc; border-radius: 8px; border: 1px dashed #dcdde1; box-shadow: inset 0 0 4px rgba(0,0,0,0.01);">
                     
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                        <label style="font-size: 0.8rem; font-weight: 800; color: #2d3436; white-space: nowrap;">事件名称</label>
-                        <input type="text" v-model="currentEvent.name" placeholder="输入事件名称" style="flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
+                        <label style="font-size: 0.8rem; font-weight: 800; color: #2d3436; white-space: nowrap;">{{ t('事件名称') }}</label>
+                        <input type="text" v-model="currentEvent.name" :placeholder="t('输入事件名称')" style="flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
                         
-                        <button class="btn-small btn-export" @click="shareEventToServer" title="将当前事件要求共享到云端" style="padding: 5px 12px; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">☁️ 上传</button>
+                        <button class="btn-small btn-export" @click="shareEventToServer" :title="t('将当前事件要求共享到云端')" style="padding: 5px 12px; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">☁️ {{ t('上传') }}</button>
                     </div>
                     
                     <div style="position: relative;">
-                        <input type="text" v-model="searchQuery" placeholder="🔍 搜索云端事件 (支持拼音首字母，如 'sytx')" @focus="fetchCloudEvents" style="width: 100%; padding: 6px 10px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
+                        <input type="text" v-model="searchQuery" :placeholder="t('🔍 搜索云端事件 (支持拼音首字母，如 \'sytx\')')" @focus="fetchCloudEvents" style="width: 100%; padding: 6px 10px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
                         
                         <ul v-if="searchQuery && filteredCloudEvents.length > 0" class="search-dropdown">
                             <li v-for="(ce, idx) in filteredCloudEvents" :key="ce._id || idx" @click="applyCloudEvent(ce)">
-                                <strong>{{ ce.name }}</strong>
-                                <span style="font-size: 0.7rem; color: #636e72;">(上场:{{ ce.maxOnField }}人)</span>
+                                <strong>{{ t(ce.name) }}</strong>
+                                <span style="font-size: 0.7rem; color: #636e72;">({{ t('上场:') }}{{ ce.maxOnField }}{{ t('人') }})</span>
                             </li>
                         </ul>
                         <div v-else-if="searchQuery" class="search-dropdown" style="padding: 10px; text-align: center; color: #b2bec3; font-size: 0.8rem;">
-                            未找到相关事件
+                            {{ t('未找到相关事件') }}
                         </div>
                     </div>
                 </div>
                 <div class="main-radar-container"><canvas id="mainRadarChart"></canvas></div>
                 
                 <div style="text-align: center; font-size: 0.7rem; color: #0984e3; margin-bottom: 8px; font-weight: bold;">
-                    💡 鼠标悬停在下方选择框上<br>可直接使用滚轮切换数值
+                    💡 {{ t('鼠标悬停在下方选择框上') }}<br>{{ t('可直接使用滚轮切换数值') }}
                 </div>
 
                 <div class="input-grid">
                     <div v-for="s in displayStatKeys" :key="s" class="input-item">
-                        <label>{{ s }}</label>
+                        <label>{{ t(s) }}</label>
                         <select v-model.number="currentEvent.req[s]" @change="updateMainChart" @wheel.prevent="handleStatWheel($event, s)">
                             <option v-for="val in reqOptions" :key="val" :value="val">{{ val }}</option>
                         </select>
                     </div>
                 </div>
                 <div style="margin-top:12px;">
-                    <label style="font-size:0.7rem; font-weight:bold; color: #636e72; display:block; margin-bottom:2px;">该事件上场人数上限</label>
+                    <label style="font-size:0.7rem; font-weight:bold; color: #636e72; display:block; margin-bottom:2px;">{{ t('该事件上场人数上限') }}</label>
                     <select v-model="currentEvent.maxOnField" @change="autoCalc" @wheel.prevent="handleMaxFieldWheel($event)" :style="currentEvent.maxOnField === 0 ? 'color: #d63031; border-color: #d63031; font-weight: bold; background-color: #ffeaa7;' : ''">
-                        <option :value="0">0 人</option>
-                        <option :value="1">1 人</option>
-                        <option :value="2">2 人</option>
-                        <option :value="3">3 人</option>
+                        <option :value="0">0 {{ t('人') }}</option>
+                        <option :value="1">1 {{ t('人') }}</option>
+                        <option :value="2">2 {{ t('人') }}</option>
+                        <option :value="3">3 {{ t('人') }}</option>
                     </select>
                 </div>
-                <button style="width:100%; padding:8px; margin-top:16px; background:#b2bec3; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.85rem; transition: 0.2s;" onmouseover="this.style.background='#636e72'" onmouseout="this.style.background='#b2bec3'" @click="clearReq">一键重置此事件</button>
+                <button style="width:100%; padding:8px; margin-top:16px; background:#b2bec3; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.85rem; transition: 0.2s;" onmouseover="this.style.background='#636e72'" onmouseout="this.style.background='#b2bec3'" @click="clearReq">{{ t('一键重置此事件') }}</button>
             </div>
 
             <div class="panel" style="flex:1">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-                    <h3 style="margin:0; font-size: 0.95rem; margin-right: 4px;">👥 已选上场: {{ fieldNames.length }}/5</h3>
-                    <button class="btn-ghost" style="padding: 4px 10px; font-size: 0.75rem; font-weight: bold; border-color: var(--info); color: var(--info);" @click="autoSelectField">一键选择</button>
-                    <button class="btn-ghost" style="padding: 4px 10px; font-size: 0.75rem; font-weight: bold; border-color: #d63031; color: #d63031;" @click="clearField">清空选择</button>
+                    <h3 style="margin:0; font-size: 0.95rem; margin-right: 4px;">👥 {{ t('已选上场:') }} {{ fieldNames.length }}/5</h3>
+                    <button class="btn-ghost" style="padding: 4px 10px; font-size: 0.75rem; font-weight: bold; border-color: var(--info); color: var(--info);" @click="autoSelectField">{{ t('一键选择') }}</button>
+                    <button class="btn-ghost" style="padding: 4px 10px; font-size: 0.75rem; font-weight: bold; border-color: #d63031; color: #d63031;" @click="clearField">{{ t('清空选择') }}</button>
                 </div>
                 
                 <div class="agent-grid" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px;">
                     <div v-for="a in unlockedBelievers" :key="a.name" 
                          class="agent-card" :class="{'on-field': fieldNames.includes(a.name)}"
                          @click="toggleField(a.name)" style="padding:8px; text-align:center; cursor:pointer; justify-content: center; min-height: 45px;">
-                        <strong style="font-size:0.85rem;">{{ a.name }}</strong>
+                        <strong style="font-size:0.85rem;">{{ t(a.name) }}</strong>
                     </div>
                 </div>
 
                 <h3 v-if="fieldNames.length > 0" style="margin: 16px 0 8px 0; font-size: 0.95rem; border-top: 1px solid #eee; padding-top: 12px;">
-                    💡 推荐方案 
-                    <span v-if="isCalculating" style="font-size: 0.7rem; color: var(--info); font-weight: normal;">(规划计算中...)</span>
+                    💡 {{ t('推荐方案') }} 
+                    <span v-if="isCalculating" style="font-size: 0.7rem; color: var(--info); font-weight: normal;">({{ t('规划计算中...') }})</span>
                 </h3>
                 
                 <div v-if="results.length > 0">
                     <div v-for="(r, idx) in results" :key="idx" class="rec-card">
                         
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                            <strong style="font-size:1.05rem; color: #2d3436;">组合方案 {{ idx+1 }} <span style="font-size: 0.85rem; font-weight: normal; color:#636e72;">(达成 {{ r.completedCount }}/{{ events.length }} 个事件)</span></strong>
-                            <button v-if="r.necklaces > 0 || r.talismans > 0" class="apply-btn tooltip-ui tt-bottom" data-tooltip="点击后自动将以下所有事件中的升级目标同步至【教徒管理】。" @click="applyMultiUpgrade(r)">一键同步等级</button>
+                            <strong style="font-size:1.05rem; color: #2d3436;">{{ t('组合方案') }} {{ idx+1 }} <span style="font-size: 0.85rem; font-weight: normal; color:#636e72;">({{ t('达成') }} {{ r.completedCount }}/{{ events.length }} {{ t('个事件') }})</span></strong>
+                            <button v-if="r.necklaces > 0 || r.talismans > 0" class="apply-btn tooltip-ui tt-bottom" :data-tooltip="t('点击后自动将以下所有事件中的升级目标同步至【教徒管理】。')" @click="applyMultiUpgrade(r)">{{ t('一键同步等级') }}</button>
                         </div>
                         
                         <div v-for="ep in r.eventPaths" :key="ep.eventId" class="event-path-block">
                             <template v-if="ep.isCompleted">
-                                <div class="ep-title">📌 {{ ep.eventName }}：{{ ep.sol.names.join(' + ') }}</div>
+                                <div class="ep-title">📌 {{ t(ep.eventName) }}：{{ ep.sol.names.map(n => t(n)).join(' + ') }}</div>
                                 
                                 <div v-if="ep.sol.skillDetails && ep.sol.skillDetails.length > 0" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
                                     <div v-for="grp in groupSkillsByAgent(ep.sol.skillDetails)" :key="grp.agent" 
                                          style="background: #ffffff; border: 1px solid #dfe6e9; border-radius: 8px; padding: 10px;">
                                         <div style="font-size: 0.85rem; font-weight: 800; color: #2d3436; margin-bottom: 8px; border-bottom: 1px solid #f1f2f6; padding-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                                            👤 {{ grp.agent }} 
+                                            👤 {{ t(grp.agent) }} 
                                         </div>
                                         <div class="skill-tags-container" style="margin-top: 4px;">
                                             <span v-for="(sk, sIdx) in grp.skills" :key="sIdx" 
                                                   class="skill-tag" :class="{'upgrade-highlight': sk.targetLv > sk.currentLv && !sk.isAvatar && !sk.isSpecial}">
                                                 <template v-if="sk.isAvatar || sk.isSpecial">
-                                                    ✨ {{ sk.skill }} <span style="font-size: 0.7rem; opacity: 0.8;">({{ sk.valDesc || sk.val }})</span>
+                                                    ✨ {{ t(sk.skill) }} <span style="font-size: 0.7rem; opacity: 0.8;">({{ t(sk.valDesc || sk.val) }})</span>
                                                 </template>
                                                 <template v-else-if="sk.targetLv > sk.currentLv">
-                                                    🚀 {{ sk.skill }} 升至 <b>Lv.{{ sk.targetLv }}</b> 
-                                                    <span style="font-size: 0.7rem; opacity: 0.7;">(+{{ sk.val }}{{ sk.type }})</span>
+                                                    🚀 {{ t(sk.skill) }} {{ t('升至') }} <b>Lv.{{ sk.targetLv }}</b> 
+                                                    <span style="font-size: 0.7rem; opacity: 0.7;">(+{{ sk.val }}{{ t(sk.type) }})</span>
                                                 </template>
                                                 <template v-else>
-                                                    ✅ {{ sk.skill }} Lv.{{ sk.targetLv }}
-                                                    <span style="font-size: 0.7rem; opacity: 0.7;">(+ {{ sk.val }}{{ sk.type }})</span>
+                                                    ✅ {{ t(sk.skill) }} Lv.{{ sk.targetLv }}
+                                                    <span style="font-size: 0.7rem; opacity: 0.7;">(+ {{ sk.val }}{{ t(sk.type) }})</span>
                                                 </template>
                                             </span>
                                         </div>
@@ -291,28 +295,28 @@
 
                             </template>
                             <template v-else>
-                                <div class="ep-title uncompleted">📌 {{ ep.eventName }} <span style="font-weight: normal; font-size:0.75rem; margin-left: auto;">(如果无法全部完成，优先保证其他事件)</span></div>
+                                <div class="ep-title uncompleted">📌 {{ t(ep.eventName) }} <span style="font-weight: normal; font-size:0.75rem; margin-left: auto;">({{ t('如果无法全部完成，优先保证其他事件') }})</span></div>
                             </template>
                         </div>
                         
                         <div style="margin-top:12px; border-top: 1px dashed #dcdde1; padding-top: 10px;">
                             <div class="cost-tag" v-if="r.necklaces > 0 || r.talismans > 0">
-                                汇总消耗 👉 💎 项链: {{ r.necklaces }}，灵符: {{ r.talismans }}
+                                {{ t('汇总消耗') }} 👉 💎 {{ t('项链:') }} {{ r.necklaces }}，{{ t('灵符:') }} {{ r.talismans }}
                             </div>
-                            <div v-else style="color:var(--success); font-weight:bold; font-size:0.85rem;">✅ 该组合整体已达标，无需消耗资源</div>
+                            <div v-else style="color:var(--success); font-weight:bold; font-size:0.85rem;">✅ {{ t('该组合整体已达标，无需消耗资源') }}</div>
                         </div>
                     </div>
                 </div>
                 
                 <div v-else-if="(fieldNames.length > 0 || events.some(e => e.maxOnField == 0)) && !isCalculating" class="empty-state">
-                    <strong style="font-size: 0.9rem; color: #d63031;">🚫 当前无可用方案</strong>
+                    <strong style="font-size: 0.9rem; color: #d63031;">🚫 {{ t('当前无可用方案') }}</strong>
                     
                     <p v-if="events.some(e => e.maxOnField == 0)" style="margin: 6px 0 0 0; font-size: 0.75rem; color: #d63031; font-weight: bold;">
-                        请检查事件上场人数上限。
+                        {{ t('请检查事件上场人数上限。') }}
                     </p>
                     
                     <p v-else style="margin: 6px 0 0 0; font-size: 0.75rem; color: #636e72;">
-                        请尝试选择更多、高等级的密探上场，或者选择更简单的事件。
+                        {{ t('请尝试选择更多、高等级的密探上场，或者选择更简单的事件。') }}
                     </p>
                 </div>
             </div>
@@ -324,8 +328,8 @@
                      class="agent-card" :class="{unlocked: agent.isUnlocked}"
                      @click="toggleAgentLock(agent, $event)" style="cursor: pointer;">
                     <div class="agent-name">
-                        <span>{{ agent.name }}</span>
-                        <span class="status-badge" :class="{active: agent.isUnlocked}">{{ agent.isUnlocked ? '已解锁' : '未解锁' }}</span>
+                        <span>{{ t(agent.name) }}</span>
+                        <span class="status-badge" :class="{active: agent.isUnlocked}">{{ agent.isUnlocked ? t('已解锁') : t('未解锁') }}</span>
                     </div>
                     
                     <div class="agent-radar-box">
@@ -336,27 +340,27 @@
                     <div v-if="agent.isUnlocked">
                         <div v-if="agent.name === '张修'" class="skill-item" style="background: #e8f5e9; border: 1px solid #27ae60; margin-bottom: 8px;">
                             <div class="skill-label">
-                                <span style="display: flex; align-items: center; gap: 4px;">✨ 化身 <span style="font-size: 0.65rem; color: #27ae60; font-weight: normal;"></span></span>
+                                <span style="display: flex; align-items: center; gap: 4px;">✨ {{ t('化身') }} <span style="font-size: 0.65rem; color: #27ae60; font-weight: normal;"></span></span>
                                 <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
                                     <input type="checkbox" v-model="agent.cloneEnabled" @change="autoCalc">
-                                    <span :style="{ color: agent.cloneEnabled ? '#27ae60' : '#888' }">{{ agent.cloneEnabled ? '已解锁' : '未解锁' }}</span>
+                                    <span :style="{ color: agent.cloneEnabled ? '#27ae60' : '#888' }">{{ agent.cloneEnabled ? t('已解锁') : t('未解锁') }}</span>
                                 </label>
                             </div>
                             <div v-show="agent.cloneEnabled" style="font-size: 0.65rem; color: #555; margin-top: 6px; border-top: 1px dashed #a5d6a7; padding-top: 6px;">
-                                能够在空位复制出一个和自己能力一样的分身。
+                                {{ t('能够在空位复制出一个和自己能力一样的分身。') }}
                             </div>
                         </div>
 
                         <div v-if="agent.name === '张飞'" class="skill-item" style="background: #fff3e0; border: 1px solid #ffb74d; margin-bottom: 8px;">
                             <div class="skill-label">
-                                <span style="display: flex; align-items: center; gap: 4px;">🤝 手足情 <span style="font-size: 0.65rem; color: #f57c00; font-weight: normal;"></span></span>
+                                <span style="display: flex; align-items: center; gap: 4px;">🤝 {{ t('手足情') }} <span style="font-size: 0.65rem; color: #f57c00; font-weight: normal;"></span></span>
                                 <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
                                     <input type="checkbox" v-model="agent.brotherhoodEnabled" @change="autoCalc">
-                                    <span :style="{ color: agent.brotherhoodEnabled ? '#f57c00' : '#888' }">{{ agent.brotherhoodEnabled ? '已解锁' : '未解锁' }}</span>
+                                    <span :style="{ color: agent.brotherhoodEnabled ? '#f57c00' : '#888' }">{{ agent.brotherhoodEnabled ? t('已解锁') : t('未解锁') }}</span>
                                 </label>
                             </div>
                             <div v-show="agent.brotherhoodEnabled" style="font-size: 0.65rem; color: #555; margin-top: 6px; border-top: 1px dashed #ffcc80; padding-top: 6px;">
-                                和关羽一同上场处理事件时，自动提升魅力5点。
+                                {{ t('和关羽一同上场处理事件时，自动提升魅力5点。') }}
                             </div>
                         </div>
 
@@ -364,12 +368,12 @@
                             <div v-for="sItem in getSortedSkillsByLevel(agent.skills)" :key="sItem.name" class="skill-item">
                                 <div class="skill-label">
                                     <span>
-                                        {{ sItem.name }}
+                                        {{ t(sItem.name) }}
                                         <span v-if="sItem.data.val[sItem.data.level] > 0" style="font-size:0.65rem; color:#888; font-weight:normal; margin-left: 2px;">
                                             (+{{ sItem.data.val[sItem.data.level] }})
                                         </span>
                                     </span> 
-                                    <span style="color:var(--primary); font-size:0.6rem; background: #fbeceb; padding: 2px 6px; border-radius: 4px;">{{ sItem.data.type }}</span>
+                                    <span style="color:var(--primary); font-size:0.6rem; background: #fbeceb; padding: 2px 6px; border-radius: 4px;">{{ t(sItem.data.type) }}</span>
                                 </div>
                                 <div class="lvl-group">
                                     <button v-for="lv in [0,1,2,3,4,5]" :key="lv" 
@@ -416,6 +420,54 @@
                 const showNotice = ref(false);
                 const toggleNotice = () => { showNotice.value = !showNotice.value; };
 
+                // ====== 💯 重构：安全的 Vue 原生简繁转换方案 ======
+                const isTraditional = ref(localStorage.getItem('mijiao_lang') === 'tw');
+                
+                // 仅在初始化时创建一次转换器函数
+                let cn2tw = (s) => s;
+                let tw2cn = (s) => s;
+                if (typeof OpenCC !== 'undefined') {
+                    cn2tw = OpenCC.Converter({ from: 'cn', to: 'tw' });
+                    tw2cn = OpenCC.Converter({ from: 'tw', to: 'cn' });
+                }
+
+                // 核心翻译函数，负责渲染到页面
+                const t = (str) => {
+                    if (typeof str !== 'string' || !str) return str;
+                    return isTraditional.value ? cn2tw(str) : str;
+                };
+
+                const updateChartLabels = () => {
+                    if (mainChart && currentEvent.value) {
+                        mainChart.data.labels = STAT_KEYS.map(k => t(k));
+                        mainChart.update();
+                    }
+                    if (currentAccount.value) {
+                        currentAccount.value.agents.forEach((agent, i) => {
+                            const canvasId = 'agentRadar-' + i;
+                            const chart = agentCharts[canvasId];
+                            if (chart) {
+                                const stats = getFinalStats(agent);
+                                chart.data.labels = STAT_KEYS.map(k => {
+                                    const s = stats[k];
+                                    let line1 = `${t(k)}:${s.total}`;
+                                    if (s.bonus > 0) return [line1, `(+${s.bonus})`];
+                                    if (s.bonus < 0) return [line1, `(${s.bonus})`];
+                                    return line1;
+                                });
+                                chart.update();
+                            }
+                        });
+                    }
+                };
+
+                const toggleLang = () => {
+                    isTraditional.value = !isTraditional.value;
+                    localStorage.setItem('mijiao_lang', isTraditional.value ? 'tw' : 'cn');
+                    updateChartLabels(); // 同步更新雷达图文字
+                };
+                // ======================================
+
                 const createDefaultAgents = () => [
                     { name: '刘辩', isUnlocked: false, base: {智慧:35, 魅力:35, 口才:35, 气运:35, 灵感:35, 体魄:35}, skills: { '巧舌':{type:'口才', val:[0,10,20,25,35,45], level:0}, '敏锐':{type:'智慧', val:[0,5,10,20,25,30], level:0}, '吉星':{type:'气运', val:[0,5,10,15,20,25], level:0}, '仪表不凡':{type:'魅力', val:[0,10,15,25,30,40], level:0} } },
                     { name: '张角', isUnlocked: false, base: {智慧:15, 魅力:15, 口才:15, 气运:15, 灵感:15, 体魄:15}, skills: { '谋算':{type:'智慧', val:[0,15,30,50,65,80], level:0, penalty:'口才', pVal:[0,-5,-10,-20,-25,-30]}, '大贤良师':{type:'灵感', val:[0,10,15,20,25,30], level:0}, '仪表不凡':{type:'魅力', val:[0,5,10,20,25,30], level:0}, '体健':{type:'体魄', val:[0,5,10,15,20,25], level:0} } },
@@ -434,7 +486,6 @@
                 const currentAccount = computed(() => accounts.value[activeAccountIndex.value] || null);
                 const unlockedBelievers = computed(() => currentAccount.value ? currentAccount.value.agents.filter(a => a.isUnlocked) : []);
 
-                // 统一返回完整结算数据，用于支持雷达图显示 (+加成)
                 const getFinalStats = (agent) => {
                     let total = { ...agent.base }, bonus = { '智慧':0, '魅力':0, '口才':0, '气运':0, '灵感':0, '体魄':0 };
                     Object.values(agent.skills).forEach(s => {
@@ -462,7 +513,7 @@
                     mainChart = new Chart(canvas, {
                         type: 'radar',
                         data: {
-                            labels: STAT_KEYS,
+                            labels: STAT_KEYS.map(k => t(k)),
                             datasets: [{ data: STAT_KEYS.map(k => currentEvent.value.req[k]), backgroundColor: 'rgba(171, 65, 51, 0.2)', borderColor: '#e74c3c', borderWidth: 2 }]
                         },
                         options: { responsive: true, maintainAspectRatio: false, scales: { r: { startAngle: 30, min: 0, max: 100, ticks: { display: false }, pointLabels: { font: { size: 10, weight: 'bold' } } } }, plugins: { legend: { display: false } } }
@@ -481,12 +532,12 @@
                             type: 'radar',
                             data: {
                                 labels: STAT_KEYS.map(k => {
-                                const s = stats[k];
-                                let line1 = `${k}:${s.total}`;
-                                if (s.bonus > 0) return [line1, `(+${s.bonus})`];
-                                if (s.bonus < 0) return [line1, `(${s.bonus})`];
-                                return line1;
-                            }),
+                                    const s = stats[k];
+                                    let line1 = `${t(k)}:${s.total}`;
+                                    if (s.bonus > 0) return [line1, `(+${s.bonus})`];
+                                    if (s.bonus < 0) return [line1, `(${s.bonus})`];
+                                    return line1;
+                                }),
                                 datasets: [{ data: STAT_KEYS.map(k => stats[k].total), backgroundColor: 'rgba(171, 65, 51, 0.2)', borderColor: '#e74c3c', borderWidth: 1, pointRadius: 0 }]
                             },
                             options: { responsive: true, maintainAspectRatio: false, scales: { r: { startAngle: 30, min: 0, max: 100, ticks: { display: false }, pointLabels: { font: { size: 9 }, padding: 2 } } }, plugins: { legend: { display: false } } }
@@ -495,12 +546,8 @@
                 };
                 
                 const toggleAgentLock = (agent, e) => {
-                    // 如果点击的是内部控件（按钮或勾选框标签），则不触发锁定/解锁，避免误触
                     if (e.target.closest('button, input, label')) return;
-                    
                     agent.isUnlocked = !agent.isUnlocked;
-                    
-                    // 如果操作是把原本解锁的教徒锁定了，那要顺便把TA从出战列表里拿下来
                     if (!agent.isUnlocked) {
                         const idx = fieldNames.value.indexOf(agent.name);
                         if (idx > -1) fieldNames.value.splice(idx, 1);
@@ -515,12 +562,12 @@
                         if (chart) {
                             const stats = getFinalStats(agent);
                             chart.data.labels = STAT_KEYS.map(k => {
-                            const s = stats[k];
-                            let line1 = `${k}:${s.total}`;
-                            if (s.bonus > 0) return [line1, `(+${s.bonus})`];
-                            if (s.bonus < 0) return [line1, `(${s.bonus})`];
-                            return line1;
-                        });
+                                const s = stats[k];
+                                let line1 = `${t(k)}:${s.total}`;
+                                if (s.bonus > 0) return [line1, `(+${s.bonus})`];
+                                if (s.bonus < 0) return [line1, `(${s.bonus})`];
+                                return line1;
+                            });
                             chart.data.datasets[0].data = STAT_KEYS.map(k => stats[k].total);
                             chart.update();
                         }
@@ -541,7 +588,7 @@
                 };
 
                 const addEvent = () => {
-                    if(events.value.length >= 5) { alert('最多支持同时规划 5 个事件'); return; }
+                    if(events.value.length >= 5) { alert(t('最多支持同时规划 5 个事件')); return; }
                     events.value.push({ id: Date.now(), name: '事件 ' + (events.value.length + 1), req: { '智慧':5, '魅力':5, '口才':5, '气运':5, '灵感':5, '体魄':5 }, maxOnField: 0 });
                     activeEventIndex.value = events.value.length - 1;
                     nextTick(updateMainChart);
@@ -561,11 +608,8 @@
                 
                 const clearReq = () => { 
                     if(currentEvent.value) {
-                        // 1. 重置所有属性为 5
                         STAT_KEYS.forEach(k => currentEvent.value.req[k] = 5); 
-                        // 2. 重置名称（根据当前是第几个标签页自动命名，比如"事件 1"）
                         currentEvent.value.name = '事件 ' + (activeEventIndex.value + 1);
-                        // 3. 重置上场人数上限为默认的 0 人
                         currentEvent.value.maxOnField = 0;
                     }
                     updateMainChart(); 
@@ -639,7 +683,6 @@
                                             if (a.name === '张修' && !a.isClone) {
                                                 processedCombo.push({ ...a, isDoubled: hasClone });
                                             } else if (a.isClone) {
-                                                // 跳过分身
                                             } else {
                                                 processedCombo.push(a);
                                             }
@@ -708,7 +751,6 @@
                         let multiplier = a.isDoubled ? 2 : 1;
                         let dynamicBonus = { '智慧':0, '魅力':0, '口才':0, '气运':0, '灵感':0, '体魄':0 };
                         
-                        // 张飞手足情羁绊判定
                         if (a.name === '张飞' && a.brotherhoodEnabled && hasGuanYu) {
                             dynamicBonus['魅力'] += 5;
                         }
@@ -735,21 +777,18 @@
                         const sNames = Object.keys(agent.skills);
                         let pairs = [];
                         
-                        // 判定是否占用能力位
                         let takesSlot = false;
-                        if (agent.isDoubled) takesSlot = true; // 张修化身占用
+                        if (agent.isDoubled) takesSlot = true; 
                         let brotherhoodActive = (agent.name === '张飞' && agent.brotherhoodEnabled && hasGuanYu);
-                        if (brotherhoodActive) takesSlot = true; // 张飞羁绊占用
+                        if (brotherhoodActive) takesSlot = true; 
 
-                        // 生成能力组合
-                        pairs.push([null, null]); // 允许0个能力（仅提供基础属性，不触发任何扣减惩罚）
+                        pairs.push([null, null]); 
 
                         for(let i=0; i<sNames.length; i++) {
-                            pairs.push([sNames[i], null]); // 仅选1个能力，用 null 替代重复的技能名，防止循环被跳过
+                            pairs.push([sNames[i], null]); 
                         }
                         
                         if (!takesSlot) {
-                            // 如果不占用能力位，则可以任选2个不重复的能力组合
                             for(let i=0; i<sNames.length; i++) { 
                                 for(let j=i+1; j<sNames.length; j++) {
                                     pairs.push([sNames[i], sNames[j]]); 
@@ -898,18 +937,18 @@
                             });
                         }
                     });
-                    if(applied) { alert("多事件目标等级已全部同步！"); autoCalc(); }
+                    if(applied) { alert(t("多事件目标等级已全部同步！")); autoCalc(); }
                 };
 
-                const addAccount = () => { const n = prompt("请输入新的存档名称："); if(n) { accounts.value.push({ name: n, agents: createDefaultAgents() }); activeAccountIndex.value = accounts.value.length - 1; } };
+                const addAccount = () => { const n = prompt(t("请输入新的存档名称：")); if(n) { accounts.value.push({ name: n, agents: createDefaultAgents() }); activeAccountIndex.value = accounts.value.length - 1; } };
                 
                 const renameAccount = () => {
                     if(!currentAccount.value) return;
-                    const newName = prompt("请输入新的存档名称：", currentAccount.value.name);
+                    const newName = prompt(t("请输入新的存档名称："), currentAccount.value.name);
                     if(newName && newName.trim() !== '') { currentAccount.value.name = newName.trim(); }
                 };
                 
-                const deleteAccount = () => confirm("确定要删除当前存档吗？") && (accounts.value.splice(activeAccountIndex.value, 1), activeAccountIndex.value = 0);
+                const deleteAccount = () => confirm(t("确定要删除当前存档吗？")) && (accounts.value.splice(activeAccountIndex.value, 1), activeAccountIndex.value = 0);
                 const exportData = () => { const blob = new Blob([JSON.stringify(accounts.value)], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `save.json`; link.click(); };
                 const triggerImport = () => document.querySelector('input[type="file"]').click();
                 const handleImport = (e) => {
@@ -924,30 +963,29 @@
                                     let zf = acc.agents.find(a => a.name === '张飞');
                                     if(zf && typeof zf.brotherhoodEnabled === 'undefined') zf.brotherhoodEnabled = false;
                                 });
-                                accounts.value = imported; alert("成"); 
+                                accounts.value = imported; alert(t("导入成功！")); 
                                 if(tab.value === 'roster') nextTick(initAgentCharts); 
                             } 
-                        } catch (e) { alert("败"); } 
+                        } catch (e) { alert(t("导入失败！")); } 
                     }; 
                     reader.readAsText(file);
                 };
                 
-                // --- 新增：云端事件与搜索相关变量 ---
-                const { pinyin } = pinyinPro; // 获取拼音库
+                const { pinyin } = pinyinPro; 
                 const searchQuery = ref('');
-                const cloudEvents = ref([]); // 这里将存放从你后端拉取的事件列表
+                const cloudEvents = ref([]); 
 
-                // 计算属性：实现中文和拼音首字母搜索
                 const filteredCloudEvents = computed(() => {
                     if (!searchQuery.value) return [];
-                    const query = searchQuery.value.toLowerCase();
+                    // 新增：自动兼容用户用繁体输入搜索的情况
+                    const rawQuery = searchQuery.value;
+                    const safeQuery = (typeof tw2cn !== 'undefined' ? tw2cn(rawQuery) : rawQuery).toLowerCase();
+                    
                     return cloudEvents.value.filter(ce => {
                         const name = ce.name;
-                        // 1. 匹配纯中文
-                        if (name.includes(query)) return true;
-                        // 2. 匹配拼音首字母 (例如 "深渊探险" -> "sytx")
+                        if (name.includes(safeQuery)) return true;
                         const pyInitials = pinyin(name, { pattern: 'first', toneType: 'none', type: 'array' }).join('').toLowerCase();
-                        if (pyInitials.includes(query)) return true;
+                        if (pyInitials.includes(safeQuery)) return true;
                         return false;
                     });
                 });
@@ -959,51 +997,51 @@
                         const res = await fetch('https://mfqptanikc.sealosbja.site/getEvents');
                         const data = await res.json();
                         
-                        // 确保后端返回的是一个数组，再赋值给本地变量
                         if (Array.isArray(data)) {
                             cloudEvents.value = data;
                         } else if (data && Array.isArray(data.data)) {
-                            // 如果你后端返回的是 { code: 200, data: [...] } 这种格式
                             cloudEvents.value = data.data; 
                         }
                     } catch (error) {
-                        console.error('获取云端事件失败', error);
+                        console.error(t('获取云端事件失败'), error);
                     }
                 };
 
-                // 函数：上传当前事件到你的服务器
                 const shareEventToServer = async () => {
                     const ev = currentEvent.value;
                     const name = ev.name ? ev.name.trim() : "";
 
-                    // 1. 基本非空校验：拦截空值、默认名称"事件 X"以及纯"事件"二字
+                    // 【新增】在校验和上传前，自动将用户输入的繁体字转为简体
+                    if (typeof tw2cn !== 'undefined') {
+                        name = tw2cn(name);
+                    }
+                    
                     if (!name || name === '事件' || name.startsWith('事件 ')) {
-                        alert('提示：请输入正确的事件名字。');
+                        alert(t('提示：请输入正确的事件名字。'));
                         return;
                     }
 
                     if (ev.maxOnField === 0) {
-                        alert('提示：请设置上场人数上限。');
+                        alert(t('提示：请设置上场人数上限。'));
                         return;
                     }
 
                     const isAllFive = STAT_KEYS.every(k => ev.req[k] === 5);
                     if (isAllFive) {
-                        alert('提示：请设置事件的属性要求，不能全为 5。');
+                        alert(t('提示：请设置事件的属性要求，不能全为 5。'));
                         return;
                     }
 
-                    // 2. 【新增】中文校验：只能包含中文字符
                     const chineseRegex = /^[\u4e00-\u9fa5]+$/;
                     if (!chineseRegex.test(name)) {
-                        alert('事件名称必须全部使用中文，不能包含数字、字母或特殊符号。');
+                        alert(t('事件名称必须全部使用中文，不能包含数字、字母或特殊符号。'));
                         return;
                     }
 
                     const blockedWords = ['集市', '山间', '乡野', '普通', '龙女', '粮草'];
                     const containsBlockedWord = blockedWords.some(word => name.includes(word));
                     if (containsBlockedWord) {
-                        alert('提示：请输入正确的事件名字。');
+                        alert(t('提示：事件名称中包含了不允许的词汇（如：集市、山间等），请修改后再上传。'));
                         return;
                     }
 
@@ -1020,34 +1058,29 @@
                             body: JSON.stringify(payload)
                         });
 
-                        alert(`事件【${name}】已成功共享至云端！`);
+                        alert(t('事件') + '【' + name + '】' + t('已成功共享至云端！'));
                         
-                        // 更新本地搜索列表
                         const existIdx = cloudEvents.value.findIndex(c => c.name === name);
                         if (existIdx > -1) cloudEvents.value[existIdx] = payload;
                         else cloudEvents.value.push(payload);
 
                     } catch (error) {
-                        alert('上传失败，请检查网络。');
+                        alert(t('上传失败，请检查网络。'));
                     }
                 };
 
-                // 函数：应用选中的云端事件到当前面板
                 const applyCloudEvent = (ce) => {
                     currentEvent.value.name = ce.name;
-                    
-                    // 【修改】逐个属性安全赋值，并确保是数字格式，防止 Vue 响应式断裂
                     STAT_KEYS.forEach(k => {
                         currentEvent.value.req[k] = Number(ce.req[k]) || 5;
                     });
                     currentEvent.value.maxOnField = Number(ce.maxOnField) || 0;
                     
-                    searchQuery.value = ''; // 选完后清空搜索框关闭下拉列表
-                    updateMainChart(); // 更新雷达图与重新计算
+                    searchQuery.value = ''; 
+                    updateMainChart(); 
                 };
 
                 onMounted(() => {
-                    // 全局点击事件：用于点击其他地方收起“注意事项”弹出框
                     document.addEventListener('click', (e) => {
                         if (!e.target.closest('.notice-badge')) {
                             showNotice.value = false;
@@ -1059,23 +1092,21 @@
                         if (s) {
                             const parsed = JSON.parse(s);
                             if (parsed && parsed[0] && parsed[0].agents) {
-                                // 高级数据自适应缝合合并：将代码中新加的机制/密探并入缓存的老存档，且不覆盖进度
                                 const defaultAgents = createDefaultAgents();
                                 parsed.forEach(acc => {
                                     defaultAgents.forEach(defA => {
                                         let exA = acc.agents.find(a => a.name === defA.name);
                                         if (!exA) {
-                                            acc.agents.push(JSON.parse(JSON.stringify(defA))); // 新增角色
+                                            acc.agents.push(JSON.parse(JSON.stringify(defA))); 
                                         } else {
                                             if (typeof exA.cloneEnabled === 'undefined' && typeof defA.cloneEnabled !== 'undefined') exA.cloneEnabled = defA.cloneEnabled;
                                             if (typeof exA.brotherhoodEnabled === 'undefined' && typeof defA.brotherhoodEnabled !== 'undefined') exA.brotherhoodEnabled = defA.brotherhoodEnabled;
                                             
-                                            exA.base = { ...defA.base }; // 自动同步最新的基础属性平衡
+                                            exA.base = { ...defA.base }; 
                                             Object.keys(defA.skills).forEach(sName => {
                                                 if (!exA.skills[sName]) {
-                                                    exA.skills[sName] = JSON.parse(JSON.stringify(defA.skills[sName])); // 新增技能
+                                                    exA.skills[sName] = JSON.parse(JSON.stringify(defA.skills[sName])); 
                                                 } else {
-                                                    // 自动同步最新的技能数值平衡，但保留玩家升级的 level
                                                     exA.skills[sName].val = [...defA.skills[sName].val];
                                                     exA.skills[sName].type = defA.skills[sName].type;
                                                     if (defA.skills[sName].penalty) {
@@ -1110,7 +1141,11 @@
                     try { const savedTab = localStorage.getItem('mijiao_v11_tab'); if (savedTab === 'sim' || savedTab === 'roster') tab.value = savedTab; } catch(e) {}
                     try { const f = localStorage.getItem('mijiao_v11_field'); if(f) { const parsedF = JSON.parse(f); if (Array.isArray(parsedF)) fieldNames.value = parsedF; } } catch(e) { fieldNames.value = []; }
 
-                    nextTick(() => { initMainChart(); if(tab.value === 'roster') initAgentCharts(); if(fieldNames.value.length > 0) autoCalc(); });
+                    nextTick(() => { 
+                        initMainChart(); 
+                        if(tab.value === 'roster') initAgentCharts(); 
+                        if(fieldNames.value.length > 0) autoCalc(); 
+                    });
                 });
 
                 watch(accounts, v => { localStorage.setItem('mijiao_v11_data', JSON.stringify(v)); }, { deep: true });
@@ -1127,7 +1162,9 @@
                     fieldNames, results, isCalculating, groupSkillsByAgent, getSortedSkillsByLevel,
                     changeTab, clearReq, clearField, autoSelectField, toggleField, applyMultiUpgrade, updateSkill, 
                     addAccount, renameAccount, deleteAccount, exportData, triggerImport, handleImport, updateMainChart, autoCalc,
-                    handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents
+                    handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents,
+                    
+                    isTraditional, toggleLang, t
                 };
             }
         }).mount('#app');
