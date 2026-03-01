@@ -7,6 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐈‍⬛</text></svg>">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/pinyin-pro"></script>
     <style>
         :root {
             --primary: #AB4133; 
@@ -129,6 +130,20 @@
             opacity: 0;
             margin-top: 0;
         }
+
+        /* 新增：搜索下拉框样式 */
+        .search-dropdown { 
+            position: absolute; top: 100%; left: 0; right: 0; background: white; 
+            border: 1px solid #dfe6e9; border-radius: 6px; max-height: 200px; 
+            overflow-y: auto; z-index: 50; margin: 4px 0 0 0; padding: 0; 
+            list-style: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+        }
+        .search-dropdown li { 
+            padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f1f2f6; 
+            transition: 0.2s; display: flex; align-items: center; justify-content: space-between;
+        }
+        .search-dropdown li:last-child { border-bottom: none; }
+        .search-dropdown li:hover { background: #f8f9fa; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -168,7 +183,29 @@
                     </div>
                     <button class="add-evt-btn" v-if="events.length < 5" @click="addEvent" title="添加新事件">+ 新事件</button>
                 </div>
-
+                <div style="margin-bottom: 12px; padding: 10px; background: #fafbfc; border-radius: 8px; border: 1px dashed #dcdde1; box-shadow: inset 0 0 4px rgba(0,0,0,0.01);">
+                    
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <label style="font-size: 0.8rem; font-weight: 800; color: #2d3436; white-space: nowrap;">事件名称</label>
+                        <input type="text" v-model="currentEvent.name" placeholder="输入事件名称" style="flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
+                        
+                        <button class="btn-small btn-export" @click="shareEventToServer" title="将当前事件要求上传到数据库" style="padding: 5px 12px; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">☁️ 上传</button>
+                    </div>
+                    
+                    <div style="position: relative;">
+                        <input type="text" v-model="searchQuery" placeholder="🔍 搜索云端事件 (支持拼音首字母，如 'sytx')" @focus="fetchCloudEvents" style="width: 100%; padding: 6px 10px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
+                        
+                        <ul v-if="searchQuery && filteredCloudEvents.length > 0" class="search-dropdown">
+                            <li v-for="ce in filteredCloudEvents" :key="ce.name" @click="applyCloudEvent(ce)">
+                                <strong>{{ ce.name }}</strong>
+                                <span style="font-size: 0.7rem; color: #636e72;">(上场:{{ ce.maxOnField }}人)</span>
+                            </li>
+                        </ul>
+                        <div v-else-if="searchQuery" class="search-dropdown" style="padding: 10px; text-align: center; color: #b2bec3; font-size: 0.8rem;">
+                            未找到相关事件
+                        </div>
+                    </div>
+                </div>
                 <div class="main-radar-container"><canvas id="mainRadarChart"></canvas></div>
                 
                 <div style="text-align: center; font-size: 0.7rem; color: #0984e3; margin-bottom: 8px; font-weight: bold;">
@@ -514,7 +551,17 @@
                 const changeTab = (t) => { tab.value = t; nextTick(() => { if(t === 'sim') initMainChart(); if(t === 'roster') initAgentCharts(); }); };
                 const updateMainChart = () => { if(mainChart && currentEvent.value) { mainChart.data.datasets[0].data = STAT_KEYS.map(k => currentEvent.value.req[k]); mainChart.update(); } autoCalc(); };
                 
-                const clearReq = () => { if(currentEvent.value) STAT_KEYS.forEach(k => currentEvent.value.req[k] = 5); updateMainChart(); };
+                const clearReq = () => { 
+                    if(currentEvent.value) {
+                        // 1. 重置所有属性为 5
+                        STAT_KEYS.forEach(k => currentEvent.value.req[k] = 5); 
+                        // 2. 重置名称（根据当前是第几个标签页自动命名，比如"事件 1"）
+                        currentEvent.value.name = '事件 ' + (activeEventIndex.value + 1);
+                        // 3. 重置上场人数上限为默认的 3 人
+                        currentEvent.value.maxOnField = 3;
+                    }
+                    updateMainChart(); 
+                };
                 const clearField = () => { fieldNames.value = []; results.value = []; };
                 
                 const autoSelectField = () => {
@@ -869,6 +916,78 @@
                     }; 
                     reader.readAsText(file);
                 };
+                
+                // --- 新增：云端事件与搜索相关变量 ---
+                const { pinyin } = pinyinPro; // 获取拼音库
+                const searchQuery = ref('');
+                const cloudEvents = ref([]); // 这里将存放从你后端拉取的事件列表
+
+                // 计算属性：实现中文和拼音首字母搜索
+                const filteredCloudEvents = computed(() => {
+                    if (!searchQuery.value) return [];
+                    const query = searchQuery.value.toLowerCase();
+                    return cloudEvents.value.filter(ce => {
+                        const name = ce.name;
+                        // 1. 匹配纯中文
+                        if (name.includes(query)) return true;
+                        // 2. 匹配拼音首字母 (例如 "深渊探险" -> "sytx")
+                        const pyInitials = pinyin(name, { pattern: 'first', toneType: 'none', type: 'array' }).join('').toLowerCase();
+                        if (pyInitials.includes(query)) return true;
+                        return false;
+                    });
+                });
+
+                const fetchCloudEvents = async () => {
+                    if (cloudEvents.value.length > 0) return; 
+
+                    try {
+                        const res = await fetch('https://mfqptanikc.sealosbja.site/getEvents');
+                        const data = await res.json();
+                        cloudEvents.value = data;
+                    } catch (error) {
+                        console.error('获取云端事件失败', error);
+                    }
+                };
+
+                // 函数：上传当前事件到你的服务器
+                const shareEventToServer = async () => {
+                    const ev = currentEvent.value;
+                    if (!ev.name || ev.name.trim().startsWith('事件 ')) {
+                        alert('请先在输入框中给事件起一个明确的名字！');
+                        return;
+                    }
+
+                    try {
+                        const payload = {
+                            name: ev.name,
+                            req: ev.req,
+                            maxOnField: ev.maxOnField
+                        };
+
+                        // 把这里换成你刚刚复制的 addEvent 链接！
+                        await fetch('https://mfqptanikc.sealosbja.site/addEvent', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        alert(`事件【${ev.name}】已成功共享至云端！`);
+                        
+                        // 上传成功后，把它也塞进本地的列表里，方便立刻搜到
+                        cloudEvents.value.push(payload);
+                    } catch (error) {
+                        alert('上传失败，请检查网络或控制台报错。');
+                    }
+                };
+
+                // 函数：应用选中的云端事件到当前面板
+                const applyCloudEvent = (ce) => {
+                    currentEvent.value.name = ce.name;
+                    currentEvent.value.req = { ...ce.req };
+                    currentEvent.value.maxOnField = ce.maxOnField;
+                    searchQuery.value = ''; // 选完后清空搜索框关闭下拉列表
+                    updateMainChart(); // 更新雷达图与重新计算
+                };
 
                 onMounted(() => {
                     // 全局点击事件：用于点击其他地方收起“注意事项”弹出框
@@ -944,7 +1063,7 @@
                     fieldNames, results, isCalculating, groupSkillsByAgent, getSortedSkillsByLevel,
                     changeTab, clearReq, clearField, autoSelectField, toggleField, applyMultiUpgrade, updateSkill, 
                     addAccount, renameAccount, deleteAccount, exportData, triggerImport, handleImport, updateMainChart, autoCalc,
-                    handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice
+                    handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents
                 };
             }
         }).mount('#app');
