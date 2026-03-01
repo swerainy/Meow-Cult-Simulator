@@ -971,11 +971,18 @@
                         alert('提示：请设置事件的属性要求，不能全为 5。');
                         return;
                     }
-                    
+
                     // 2. 【新增】中文校验：只能包含中文字符
                     const chineseRegex = /^[\u4e00-\u9fa5]+$/;
                     if (!chineseRegex.test(name)) {
                         alert('事件名称必须全部使用中文，不能包含数字、字母或特殊符号。');
+                        return;
+                    }
+
+                    const blockedWords = ['集市', '山间', '乡野', '普通', '龙女', '粮草'];
+                    const containsBlockedWord = blockedWords.some(word => name.includes(word));
+                    if (containsBlockedWord) {
+                        alert('提示：请输入正确的事件名字。');
                         return;
                     }
 
