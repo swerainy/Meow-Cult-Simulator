@@ -145,6 +145,12 @@
         }
         .search-dropdown li:last-child { border-bottom: none; }
         .search-dropdown li:hover, .search-dropdown li.focused { background: #f8f9fa; color: var(--primary); }
+
+        /* 返回顶部浮球样式 */
+        .back-to-top { position: fixed; bottom: 40px; right: 40px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; cursor: pointer; box-shadow: 0 4px 12px rgba(171, 65, 51, 0.4); z-index: 999; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; visibility: hidden; transform: translateY(20px); }
+        .back-to-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        .back-to-top:hover { transform: translateY(-5px); background: #c0392b; }
+        @media (max-width: 768px) { .back-to-top { bottom: 20px; right: 20px; width: 50px; height: 50px; font-size: 1.5rem; } }
     </style>
 </head>
 <body>
@@ -203,6 +209,7 @@
                                @keydown.up.prevent="navigateSearch(-1)"
                                @keydown.tab.prevent="navigateSearch(1)"
                                @keydown.enter.prevent="selectFocusedSearch"
+                               @keydown.space.prevent="selectFocusedSearch"
                                style="width: 100%; padding: 6px 10px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
                         
                         <ul v-if="searchQuery && filteredCloudEvents.length > 0" class="search-dropdown">
@@ -402,6 +409,10 @@
                 </div>
             </div>
         </div>
+
+        <div class="back-to-top" :class="{ 'show': showBackToTop }" @click="scrollToTop" :title="t('回到顶部')">
+            ↑
+        </div>
     </div>
 
     <script>
@@ -414,6 +425,8 @@
         createApp({
             setup() {
                 const tab = ref('sim');
+                const showBackToTop = ref(false);
+                const scrollToTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); };
                 const accounts = ref([]);
                 const activeAccountIndex = ref(0);
                 
@@ -1301,6 +1314,11 @@
                 };
 
                 onMounted(() => {
+                    // 【新增】监听页面滚动，控制浮球显示/隐藏
+                    window.addEventListener('scroll', () => {
+                        showBackToTop.value = window.scrollY > 300; // 滚出 300px 后显示
+                    });
+
                     document.addEventListener('click', (e) => {
                         if (!e.target.closest('.notice-badge')) {
                             showNotice.value = false;
@@ -1385,6 +1403,7 @@
                     handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents,
                     focusedSearchIndex, navigateSearch, selectFocusedSearch,
                     groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
+                    showBackToTop, scrollToTop,
                     isTraditional, toggleLang, t
                 };
             }
