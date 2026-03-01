@@ -1397,6 +1397,9 @@ if (!takesSlot) {
                                                         delete exA.skills[sName].penalty;
                                                         delete exA.skills[sName].pVal;
                                                     }
+                                                    if (exA.skills[sName].level < defA.skills[sName].level) {
+                                                        exA.skills[sName].level = defA.skills[sName].level;
+                                                    }
                                                 }
                                             });
                                         }
