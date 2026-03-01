@@ -196,7 +196,7 @@
                         <input type="text" v-model="searchQuery" placeholder="🔍 搜索云端事件 (支持拼音首字母，如 'sytx')" @focus="fetchCloudEvents" style="width: 100%; padding: 6px 10px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
                         
                         <ul v-if="searchQuery && filteredCloudEvents.length > 0" class="search-dropdown">
-                            <li v-for="ce in filteredCloudEvents" :key="ce.name" @click="applyCloudEvent(ce)">
+                            <li v-for="(ce, idx) in filteredCloudEvents" :key="ce._id || idx" @click="applyCloudEvent(ce)">
                                 <strong>{{ ce.name }}</strong>
                                 <span style="font-size: 0.7rem; color: #636e72;">(上场:{{ ce.maxOnField }}人)</span>
                             </li>
@@ -1035,8 +1035,13 @@
                 // 函数：应用选中的云端事件到当前面板
                 const applyCloudEvent = (ce) => {
                     currentEvent.value.name = ce.name;
-                    currentEvent.value.req = { ...ce.req };
-                    currentEvent.value.maxOnField = ce.maxOnField;
+                    
+                    // 【修改】逐个属性安全赋值，并确保是数字格式，防止 Vue 响应式断裂
+                    STAT_KEYS.forEach(k => {
+                        currentEvent.value.req[k] = Number(ce.req[k]) || 5;
+                    });
+                    currentEvent.value.maxOnField = Number(ce.maxOnField) || 0;
+                    
                     searchQuery.value = ''; // 选完后清空搜索框关闭下拉列表
                     updateMainChart(); // 更新雷达图与重新计算
                 };
