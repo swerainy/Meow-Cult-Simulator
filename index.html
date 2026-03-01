@@ -1062,7 +1062,16 @@
                     }
                 };
 
+                // 【新增】上传功能总开关：改成 true 即可瞬间恢复所有上传功能，改成 false 则关闭
+                const isUploadEnabled = false;
+
                 const shareEventToServer = async () => {
+                    // 如果开关是关闭状态，直接弹出提示并终止运行
+                    if (!isUploadEnabled) {
+                        alert(t('感谢您的积极参与与贡献！目前云端事件库已基本收集完善，上传功能暂行关闭。若您发现了尚未收录的全新事件，欢迎单独反馈。'));
+                        return;
+                    }
+
                     const ev = currentEvent.value;
                     let name = ev.name ? ev.name.trim() : "";
 
@@ -1099,7 +1108,7 @@
                         return;
                     }
 
-                    const blockedWords = ['集市', '山间', '乡野', '普通', '龙女', '粮草', '蝗蝗', '薯薯', '制造'];
+                    const blockedWords = ['集市', '山间', '乡野', '普通', '龙女', '粮草', '蝗蝗', '薯薯', '制造', '河流', '两小儿'];
                     const containsBlockedWord = blockedWords.some(word => name.includes(word));
                     if (containsBlockedWord) {
                         alert(t('提示：请输入正确、完整的事件名称而不是分线的名称。同时注意错别字。'));
