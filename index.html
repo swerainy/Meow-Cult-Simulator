@@ -274,27 +274,27 @@
                     <div v-if="agent.isUnlocked">
                         <div v-if="agent.name === '张修'" class="skill-item" style="background: #e8f5e9; border: 1px solid #27ae60; margin-bottom: 8px;">
                             <div class="skill-label">
-                                <span style="display: flex; align-items: center; gap: 4px;">✨ 化身 <span style="font-size: 0.65rem; color: #27ae60; font-weight: normal;">(分身机制)</span></span>
+                                <span style="display: flex; align-items: center; gap: 4px;">✨ 化身 <span style="font-size: 0.65rem; color: #27ae60; font-weight: normal;"></span></span>
                                 <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
                                     <input type="checkbox" v-model="agent.cloneEnabled" @change="autoCalc">
                                     <span :style="{ color: agent.cloneEnabled ? '#27ae60' : '#888' }">{{ agent.cloneEnabled ? '已解锁' : '未解锁' }}</span>
                                 </label>
                             </div>
                             <div v-show="agent.cloneEnabled" style="font-size: 0.65rem; color: #555; margin-top: 6px; border-top: 1px dashed #a5d6a7; padding-top: 6px;">
-                                占用1个能力位。在事件有空位时，可上阵一个继承本尊所有属性和生效能力的分身。
+                                能够在空位复制出一个和自己能力一样的分身。
                             </div>
                         </div>
 
                         <div v-if="agent.name === '张飞'" class="skill-item" style="background: #fff3e0; border: 1px solid #ffb74d; margin-bottom: 8px;">
                             <div class="skill-label">
-                                <span style="display: flex; align-items: center; gap: 4px;">🤝 手足情 <span style="font-size: 0.65rem; color: #f57c00; font-weight: normal;">(羁绊机制)</span></span>
+                                <span style="display: flex; align-items: center; gap: 4px;">🤝 手足情 <span style="font-size: 0.65rem; color: #f57c00; font-weight: normal;"></span></span>
                                 <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
                                     <input type="checkbox" v-model="agent.brotherhoodEnabled" @change="autoCalc">
                                     <span :style="{ color: agent.brotherhoodEnabled ? '#f57c00' : '#888' }">{{ agent.brotherhoodEnabled ? '已解锁' : '未解锁' }}</span>
                                 </label>
                             </div>
                             <div v-show="agent.brotherhoodEnabled" style="font-size: 0.65rem; color: #555; margin-top: 6px; border-top: 1px dashed #ffcc80; padding-top: 6px;">
-                                和关羽一同上场处理事件时，自动提升魅力5点。<b>（生效时将占用1个能力位）</b>
+                                和关羽一同上场处理事件时，自动提升魅力5点。
                             </div>
                         </div>
 
