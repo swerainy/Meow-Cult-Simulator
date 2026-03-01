@@ -607,7 +607,14 @@
                 const removeEvent = (idx) => {
                     if(events.value.length <= 1) return;
                     events.value.splice(idx, 1);
-                    events.value.forEach((ev, i) => ev.name = '事件 ' + (i + 1));
+                    
+                    // 【修改】只对没有改过名字的默认“事件 X”重新编号，保护玩家的自定义名称
+                    events.value.forEach((ev, i) => {
+                        if (ev.name && ev.name.startsWith('事件 ')) {
+                            ev.name = '事件 ' + (i + 1);
+                        }
+                    });
+                    
                     if(activeEventIndex.value >= events.value.length) activeEventIndex.value = events.value.length - 1;
                     nextTick(updateMainChart);
                 };
