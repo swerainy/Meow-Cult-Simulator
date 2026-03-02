@@ -707,6 +707,9 @@
                 // 在 setup 顶部声明引用
                 const backToTopRef = ref(null);
 
+                // 【新增】用于标记是否是页面刚刷新的初始加载
+                let isInitialLoad = true;
+
                 // 修改 scrollToTop 函数，防止拖拽后触发点击
                 let hasDragged = false;
                 const scrollToTop = (e) => { 
@@ -1333,13 +1336,13 @@
                 };
 
                 const switchEvent = (idx) => { activeEventIndex.value = idx; updateMainChart(); };
-                // 【修复】标签页切换逻辑：稍微增加等待时间，确保旧存档的庞大 DOM 也渲染完毕
+                // 【修复】将等待时间放宽到 300ms，以适应线上服务器的渲染速度
                 const changeTab = (t) => { 
                     tab.value = t; 
                     setTimeout(() => { 
                         if(t === 'sim') initMainChart(); 
                         if(t === 'roster') initAgentCharts(); 
-                    }, 120); // 从 50 改成 120 毫秒
+                    }, 300); 
                 };
                 const updateMainChart = () => { if(mainChart && currentEvent.value) { mainChart.data.datasets[0].data = STAT_KEYS.map(k => currentEvent.value.req[k]); mainChart.update(); } autoCalc(); };
                 
@@ -2034,39 +2037,46 @@ if (!takesSlot) {
                     try { const savedTab = localStorage.getItem('mijiao_v11_tab'); if (savedTab === 'sim' || savedTab === 'roster') tab.value = savedTab; } catch(e) {}
                     try { const f = localStorage.getItem('mijiao_v11_field'); if(f) { const parsedF = JSON.parse(f); if (Array.isArray(parsedF)) fieldNames.value = parsedF; } } catch(e) { fieldNames.value = []; }
 
-                    // 【修复】页面刚刷新加载完时，也使用 setTimeout 替代 nextTick
+                    // 【修复】页面刚刷新加载完时，也使用 300ms
                     setTimeout(() => { 
                         initMainChart(); 
                         if(tab.value === 'roster') initAgentCharts(); 
                         if(fieldNames.value.length > 0) autoCalc(); 
-                    }, 120);
-                });
+                        
+                        // 【新增】所有初始数据和图表加载完毕后，关闭防清空保护
+                        isInitialLoad = false; 
+                    }, 300);
+                }); 
 
                 watch(accounts, v => { localStorage.setItem('mijiao_v11_data', JSON.stringify(v)); }, { deep: true });
                 watch(fieldNames, v => { localStorage.setItem('mijiao_v11_field', JSON.stringify(v)); }, { deep: true });
                 watch(events, v => { localStorage.setItem('mijiao_v11_events', JSON.stringify(v)); }, { deep: true });
                 watch(activeEventIndex, v => { localStorage.setItem('mijiao_v11_active_event_idx', v.toString()); });
                 watch(tab, (newVal) => { localStorage.setItem('mijiao_v11_tab', newVal); });
-                watch(activeAccountIndex, (newVal) => { 
+                watch(activeAccountIndex, (newVal, oldVal) => { 
                     localStorage.setItem('mijiao_v11_active_idx', newVal.toString()); 
                     
-                    // 【新增】切换存档时，自动清空事件模拟板块的所有内容
-                    fieldNames.value = []; 
-                    results.value = [];    
-                    events.value = [{      
-                        id: Date.now(), 
-                        name: '事件 1', 
-                        req: { '智慧':5, '魅力':5, '口才':5, '气运':5, '灵感':5, '体魄':5 }, 
-                        maxOnField: 0 
-                    }];
-                    activeEventIndex.value = 0; 
+                    // 【关键修复】如果是页面刚刷新引发的变量变化，直接退出，不执行清空！
+                    if (isInitialLoad) return;
                     
-                    // 【修复】把 nextTick 改成 setTimeout，让切换旧存档时也拥有动画
-                    setTimeout(() => { 
-                        if (tab.value === 'roster') initAgentCharts(); 
-                        if (tab.value === 'sim') updateMainChart(); 
-                        autoCalc(); 
-                    }, 120); 
+                    // 只有在新旧序号确实不同（玩家真的切了存档）时才清空
+                    if (newVal !== oldVal) {
+                        fieldNames.value = []; 
+                        results.value = [];    
+                        events.value = [{      
+                            id: Date.now(), 
+                            name: '事件 1', 
+                            req: { '智慧':5, '魅力':5, '口才':5, '气运':5, '灵感':5, '体魄':5 }, 
+                            maxOnField: 0 
+                        }];
+                        activeEventIndex.value = 0; 
+                        
+                        setTimeout(() => { 
+                            if (tab.value === 'roster') initAgentCharts(); 
+                            if (tab.value === 'sim') updateMainChart(); 
+                            autoCalc(); 
+                        }, 300); 
+                    }
                 });
 
                 return { 
