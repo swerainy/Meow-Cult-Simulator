@@ -264,10 +264,28 @@
                 padding-right: 2px !important;
             }
         }
+
+        /* 智能更新提示条样式 */
+        .update-banner {
+            position: fixed; top: 0; left: 0; right: 0; background: var(--info); color: white;
+            text-align: center; padding: 10px; font-weight: bold; font-size: 0.9rem;
+            z-index: 10000; display: flex; align-items: center; justify-content: center; gap: 12px;
+            box-shadow: 0 4px 12px rgba(9, 132, 227, 0.3); animation: slideDown 0.5s ease;
+        }
+        .update-banner button {
+            background: white; color: var(--info); border: none; padding: 4px 12px;
+            border-radius: 4px; font-weight: 800; cursor: pointer; transition: 0.2s;
+        }
+        .update-banner button:hover { transform: scale(1.05); }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
     <div id="app" class="container">
+        <div v-if="hasNewVersion" class="update-banner">
+            ✨ {{ t('到游戏有新版本更新！') }} 
+            <button @click="reloadPage">{{ t('立即刷新体验') }}</button>
+        </div>
         <div class="account-bar">
             <div class="logo">
                 🐈‍⬛ {{ t('咪教模拟器') }}
@@ -704,6 +722,35 @@
 
         createApp({
             setup() {
+                // 【新增】用于更新检测的变量
+                const hasNewVersion = ref(false);
+                let lastFileTag = null;
+
+                // 核心：静默检查服务器上的文件是否被修改了
+                const checkUpdate = async () => {
+                    if (hasNewVersion.value) return; // 如果已经提示了，就不再重复检查
+                    try {
+                        // 在 URL 后加个时间戳，强行绕过浏览器本地缓存去问服务器
+                        const url = window.location.href.split('?')[0] + '?_t=' + Date.now();
+                        const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+                        
+                        // GitHub Pages 通常会返回 Etag 或 Last-Modified 标头
+                        const currentTag = res.headers.get('etag') || res.headers.get('last-modified');
+                        
+                        if (!lastFileTag) {
+                            lastFileTag = currentTag; // 第一次打开网页，记录下当前的版本指纹
+                        } else if (currentTag && currentTag !== lastFileTag) {
+                            hasNewVersion.value = true; // 指纹变了！说明你刚刚 push 了新代码！
+                        }
+                    } catch (e) {
+                        // 网络波动，静默忽略
+                    }
+                };
+
+                // 强制刷新并清理缓存
+                const reloadPage = () => {
+                    window.location.reload(true); 
+                };
                 // 在 setup 顶部声明引用
                 const backToTopRef = ref(null);
 
@@ -1990,6 +2037,13 @@ if (!takesSlot) {
                 };
 
                 onMounted(() => {
+                    setInterval(checkUpdate, 5 * 60 * 1000);
+                    
+                    // 当玩家把网页切到后台，过了一会儿又切回来时，立刻检查一次
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.visibilityState === 'visible') checkUpdate();
+                    });
+                    
                     // 【新增】监听页面滚动，控制浮球显示/隐藏
                     window.addEventListener('scroll', () => {
                         showBackToTop.value = window.scrollY > 300; // 滚出 300px 后显示
@@ -2112,7 +2166,7 @@ if (!takesSlot) {
                     groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
                     showBackToTop, scrollToTop,currentStatsData, allAgentsMaxPotentialData, getCellColor,
                     getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
-                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud,getQuickRecommendation,
+                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage,
                     isTraditional, toggleLang, t
                 };
             }
