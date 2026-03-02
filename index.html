@@ -120,7 +120,7 @@
             top: 130%; 
             left: 50%; /* 起始点放在按钮的正中间 */
             transform: translate(-50%, -5px); /* 向左偏移自身宽度的一半，实现完美居中 */
-            max-width: 85vw; /* 加上这个保险：最宽不超过屏幕宽度的 85%，自动换行防溢出 */
+            max-width: min(85vw, 300px); /* 【修复】限制电脑端最大为 300px 强制换行，手机端最大为屏幕 85% 防溢出 */
         }
         .tooltip-ui.tt-bottom.show-tt::before, 
         .tooltip-ui.tt-bottom:hover::before { 
