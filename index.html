@@ -1261,13 +1261,27 @@
                             // 【修正】分身（化身）和羁绊（手足情）其实在游戏里也是实打实占用 1 个槽位的！直接算总数
                             const usedSlots = agentSkillsInSol.length;
                             
-                            // 触发警告的条件：
-                            // 1. 危险技能没有被方案要求带上
-                            // 2. 玩家在教徒列表里确实升级了这个危险技能（等级>0）
-                            // 3. 该密探被分配的其他技能 < 2 个（即还有空余槽位，玩家可能手滑带错。如果槽位已满，玩家物理上不可能带错，无需提醒）
-                            if (!isUsed && usedSlots < 2) {
-                                const agent = currentAccount.value.agents.find(a => a.name === baseName);
-                                if (agent && agent.skills[skillName] && agent.skills[skillName].level > 0) {
+                            const agent = currentAccount.value.agents.find(a => a.name === baseName);
+                            if (agent && agent.skills[skillName] && agent.skills[skillName].level > 0) {
+                                
+                                // 【逻辑修复】：计算玩家实际解锁了多少个技能（包括占用槽位的特殊机制）
+                                let unlockedNormalCount = 0;
+                                Object.values(agent.skills).forEach(sk => {
+                                    if (sk.level > 0) unlockedNormalCount++;
+                                });
+                                
+                                let specialCount = 0;
+                                if (baseName === '张飞' && agent.brotherhoodEnabled && uniqueBaseNames.includes('关羽')) specialCount = 1;
+                                if (baseName === '张修' && agent.cloneEnabled) specialCount = 1;
+                                
+                                let totalUnlocked = unlockedNormalCount + specialCount;
+
+                                // 触发警告的条件：
+                                // 1. 危险技能没有被方案明确要求带上
+                                // 2. 玩家解锁的总技能数 > 2（有足够的其他技能，可以手动顶替掉负面技能）
+                                // 3. 方案分配的技能 < 2（留有空位，玩家可能会误装负面技能）
+                                // 如果总技能数 <= 2，游戏会强制填入空位无法卸下，且既然算法输出该方案说明带上也能过，则无需警报。
+                                if (!isUsed && usedSlots < 2 && totalUnlocked > 2) {
                                     const sk = agent.skills[skillName];
                                     warnings.push({
                                         agent: baseName,
