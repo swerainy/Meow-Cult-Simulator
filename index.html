@@ -254,8 +254,12 @@
             width: 150px; 
         }
 
+        /* 【新增】待解锁才能的浅黄色徽章样式 */
+        .stat-locked-badge { font-size: 0.7rem; font-weight: bold; margin-left: 4px; display: inline-flex; align-items: center; justify-content: center; padding: 1px 5px; border-radius: 6px; background: #fff3cd; color: #d35400; border: 1px solid #ffeeba; box-shadow: 0 1px 2px rgba(211, 84, 0, 0.05); cursor: help; }
+        
         /* 手机端教徒列宽度适配（表头和数据内容统一锁定 60px） */
         @media (max-width: 650px) {
+            .stat-bonus, .stat-penalty-badge, .stat-locked-badge { font-size: 0.55rem !important; margin-left: 0 !important; padding: 1px 2px !important; display: block; margin-top: 2px; }
             .th-agent, .agent-name-cell { 
                 width: 60px !important; 
                 min-width: 60px !important; 
@@ -573,6 +577,10 @@
                             <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.3); border-radius: 3px;"></span>
                             <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.45); border-radius: 3px;"></span> {{ t('强') }}
                         </div>
+                        <div style="display: flex; gap: 4px; align-items: center; border-left: 1px solid #dfe6e9; padding-left: 8px;">
+                            <span>💡 {{ t('待解锁') }}:</span>
+                            <span style="display:inline-block; padding: 1px 6px; background: #fff3cd; color: #d35400; border: 1px solid #ffeeba; border-radius: 4px; font-size: 0.65rem;">🔒</span>
+                        </div>
                     </div>
                 </div>
 
@@ -592,6 +600,7 @@
                                     <span class="stat-val">{{ row.stats[stat].total }}</span>
                                     <span v-if="row.stats[stat].bonus > 0" class="stat-bonus">(+{{ row.stats[stat].bonus }})</span>
                                     <span v-else-if="row.stats[stat].bonus < 0" class="stat-penalty-badge">({{ row.stats[stat].bonus }})</span>
+                                    <span v-if="row.stats[stat].locked > 0" class="stat-locked-badge" :title="t('包含未解锁的才能潜力')">🔒+{{ row.stats[stat].locked }}</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -1189,13 +1198,27 @@
                     return 'transparent'; // 0 加成为透明
                 };
 
+                // 【修复】增强计算函数，同时计算出未解锁技能的潜力值
                 const getFinalStats = (agent) => {
-                    let total = { ...agent.base }, bonus = { '智慧':0, '魅力':0, '口才':0, '气运':0, '灵感':0, '体魄':0 };
+                    let total = { ...agent.base }, 
+                        bonus = { '智慧':0, '魅力':0, '口才':0, '气运':0, '灵感':0, '体魄':0 },
+                        locked = { '智慧':0, '魅力':0, '口才':0, '气运':0, '灵感':0, '体魄':0 }; // 【新增】用于记录待解锁的潜力
+                        
                     Object.values(agent.skills).forEach(s => {
-                        if(s.level > 0) { bonus[s.type] += s.val[s.level]; if(s.penalty) bonus[s.penalty] += (s.pVal ? s.pVal[s.level] : 0); }
+                        if(s.level > 0) { 
+                            bonus[s.type] += s.val[s.level]; 
+                            if(s.penalty) bonus[s.penalty] += (s.pVal ? s.pVal[s.level] : 0); 
+                        } else {
+                            // 【新增】如果技能 level 为 0，说明未解锁，提取它满级时的数值作为潜力
+                            locked[s.type] += (s.val[5] || 0);
+                        }
                     });
+                    
                     let res = {}; 
-                    STAT_KEYS.forEach(k => { res[k] = { total: total[k] + bonus[k], base: total[k], bonus: bonus[k] }; });
+                    STAT_KEYS.forEach(k => { 
+                        // 将 locked 的数值一并返回给前端模板使用
+                        res[k] = { total: total[k] + bonus[k], base: total[k], bonus: bonus[k], locked: locked[k] }; 
+                    });
                     return res;
                 };
 
@@ -2109,13 +2132,15 @@ if (!takesSlot) {
                     try { const savedEvents = localStorage.getItem('mijiao_v11_events'); if (savedEvents) { const parsedEvents = JSON.parse(savedEvents); if (Array.isArray(parsedEvents) && parsedEvents.length > 0) events.value = parsedEvents; } } catch(e) {}
                     try { const savedEventIdx = localStorage.getItem('mijiao_v11_active_event_idx'); if (savedEventIdx !== null) { const eIdx = parseInt(savedEventIdx, 10); if (!isNaN(eIdx) && eIdx >= 0 && eIdx < events.value.length) activeEventIndex.value = eIdx; } } catch(e) {}
                     try { const savedIdx = localStorage.getItem('mijiao_v11_active_idx'); if (savedIdx !== null) { const idx = parseInt(savedIdx, 10); if (!isNaN(idx) && idx >= 0 && idx < accounts.value.length) activeAccountIndex.value = idx; } } catch(e) {}
-                    try { const savedTab = localStorage.getItem('mijiao_v11_tab'); if (savedTab === 'sim' || savedTab === 'roster') tab.value = savedTab; } catch(e) {}
+                    try { const savedTab = localStorage.getItem('mijiao_v11_tab'); if (['sim', 'roster', 'overview', 'cloud'].includes(savedTab)) tab.value = savedTab; } catch(e) {}
                     try { const f = localStorage.getItem('mijiao_v11_field'); if(f) { const parsedF = JSON.parse(f); if (Array.isArray(parsedF)) fieldNames.value = parsedF; } } catch(e) { fieldNames.value = []; }
 
                     // 【修复】页面刚刷新加载完时，也使用 300ms
                     setTimeout(() => { 
                         initMainChart(); 
                         if(tab.value === 'roster') initAgentCharts(); 
+                        // 【新增】如果刷新时停留的是云端事件页，自动拉取数据
+                        if(tab.value === 'cloud') fetchCloudEvents(); 
                         if(fieldNames.value.length > 0) autoCalc(); 
                         
                         // 【新增】所有初始数据和图表加载完毕后，关闭防清空保护
