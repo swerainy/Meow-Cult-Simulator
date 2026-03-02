@@ -597,7 +597,7 @@
                                 <td class="agent-name-cell">{{ t(row.name) }}</td>
                                 <td v-for="stat in displayStatKeys" :key="stat" 
                                     :style="{ backgroundColor: getCellColor(row.stats[stat].bonus) }">
-                                    <span class="stat-val">{{ row.stats[stat].total }}</span>
+                                    <span class="stat-val">{{ Math.max(0, row.stats[stat].total) }}</span>
                                     <span v-if="row.stats[stat].bonus > 0" class="stat-bonus">(+{{ row.stats[stat].bonus }})</span>
                                     <span v-else-if="row.stats[stat].bonus < 0" class="stat-penalty-badge">({{ row.stats[stat].bonus }})</span>
                                     <span v-if="row.stats[stat].locked > 0" class="stat-locked-badge" :title="t('包含未解锁的才能潜力')">🔒+{{ row.stats[stat].locked }}</span>
@@ -646,7 +646,7 @@
                                 <td class="agent-name-cell">{{ t(row.name) }}</td>
                                 <td v-for="stat in displayStatKeys" :key="stat" 
                                     :style="{ backgroundColor: getCellColor(row.stats[stat].netBonus) }">
-                                    <span class="stat-val">{{ row.stats[stat].total }}</span>
+                                    <span class="stat-val">{{ Math.max(0, row.stats[stat].total) }}</span>
                                     <span v-if="row.stats[stat].maxBonus > 0" class="stat-bonus">(+{{ row.stats[stat].maxBonus }})</span>
                                     <span v-if="row.stats[stat].maxPenalty < 0" class="stat-penalty-badge">({{ row.stats[stat].maxPenalty }})</span>
                                 </td>
@@ -1253,10 +1253,13 @@
                         if (!canvas) return;
                         
                         const stats = getFinalStats(agent);
-                        const targetData = STAT_KEYS.map(k => stats[k].total);
+                        // 【修改】雷达图顶点最低为 0
+                        const targetData = STAT_KEYS.map(k => Math.max(0, stats[k].total));
                         const targetLabels = STAT_KEYS.map(k => {
                             const s = stats[k];
-                            let line1 = `${t(k)}:${s.total}`;
+                            // 【修改】雷达图文字最低为 0
+                            let displayVal = Math.max(0, s.total);
+                            let line1 = `${t(k)}:${displayVal}`;
                             if (s.bonus > 0) return [line1, `(+${s.bonus})`];
                             if (s.bonus < 0) return [line1, `(${s.bonus})`];
                             return line1;
@@ -1310,12 +1313,15 @@
                             const stats = getFinalStats(agent);
                             chart.data.labels = STAT_KEYS.map(k => {
                                 const s = stats[k];
-                                let line1 = `${t(k)}:${s.total}`;
+                                // 【修改】在文字标签上，遇到负数时强制显示为 0
+                                let displayVal = Math.max(0, s.total);
+                                let line1 = `${t(k)}:${displayVal}`;
                                 if (s.bonus > 0) return [line1, `(+${s.bonus})`];
                                 if (s.bonus < 0) return [line1, `(${s.bonus})`];
                                 return line1;
                             });
-                            chart.data.datasets[0].data = STAT_KEYS.map(k => stats[k].total);
+                            // 【修改】在绘制雷达图形状时，遇到负数强制把顶点坐标拉回 0 的位置
+                            chart.data.datasets[0].data = STAT_KEYS.map(k => Math.max(0, stats[k].total));
                             chart.update();
                         }
                         autoCalc(); 
