@@ -342,8 +342,8 @@
                     </div>
                     
                     <div style="position: relative;">
-                        <input type="text" v-model="searchQuery" :placeholder="t('🔍 搜索云端事件 (支持拼音首字母，如 \'sytx\')')" 
-                               @focus="fetchCloudEvents" 
+                        <input type="text" ref="searchInputRef" v-model="searchQuery" :placeholder="t('🔍 搜索云端事件 (支持拼音首字母，如 \'sytx\')')" 
+                               @focus="fetchCloudEvents"
                                @keydown.down.prevent="navigateSearch(1)"
                                @keydown.up.prevent="navigateSearch(-1)"
                                @keydown.tab.prevent="navigateSearch(1)"
@@ -1395,7 +1395,14 @@
                     if(events.value.length >= 5) { alert(t('最多支持同时规划 5 个事件')); return; }
                     events.value.push({ id: Date.now(), name: '事件 ' + (events.value.length + 1), req: { '智慧':5, '魅力':5, '口才':5, '气运':5, '灵感':5, '体魄':5 }, maxOnField: 0 });
                     activeEventIndex.value = events.value.length - 1;
-                    nextTick(updateMainChart);
+                    
+                    nextTick(() => {
+                        updateMainChart();
+                        // 【新增】添加事件并更新图表后，自动聚焦到搜索框
+                        if (searchInputRef.value) {
+                            searchInputRef.value.focus();
+                        }
+                    });
                 };
                 
                 const removeEvent = (idx) => {
@@ -1880,6 +1887,7 @@ if (!takesSlot) {
                 
                 const { pinyin } = pinyinPro; 
                 const searchQuery = ref('');
+                const searchInputRef = ref(null); // 【新增】用于获取搜索框 DOM 以便自动聚焦
                 const cloudEvents = ref([]); 
 
                 const filteredCloudEvents = computed(() => {
@@ -2191,7 +2199,7 @@ if (!takesSlot) {
                     groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
                     showBackToTop, scrollToTop,currentStatsData, allAgentsMaxPotentialData, getCellColor,
                     getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
-                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage,
+                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage, searchInputRef,
                     isTraditional, toggleLang, t
                 };
             }
