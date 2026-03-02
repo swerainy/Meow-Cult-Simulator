@@ -45,9 +45,22 @@
         .btn-del { background: var(--danger); color: white; }
         .btn-edit { background: #e17055; color: white; }
 
-        /* 标签页与网格 */
-        .tabs { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
-        .tab-btn { padding: 8px 30px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 8px; font-weight: bold; font-size: 0.95rem; color: #555; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 标签页与网格（已优化移动端适配） */
+        .tabs { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; width: 100%; }
+        .tab-btn { padding: 8px 30px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 8px; font-weight: bold; font-size: 0.95rem; color: #555; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap; /* 强制文字不换行 */ }
+        .tab-btn:hover { background: #d5d5d5; }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(171, 65, 51, 0.3); }
+
+        /* 专门针对手机小屏幕的自动收缩适配 */
+        @media (max-width: 600px) {
+            .tabs { gap: 6px; } /* 缩小按钮之间的间距 */
+            .tab-btn { 
+                padding: 8px 2px; /* 大幅减少左右内边距 */
+                font-size: 0.85rem; /* 稍微缩小一点字号 */
+                flex: 1; /* 让三个按钮均匀平分屏幕宽度 */
+                text-align: center; /* 确保文字居中 */
+            }
+        }
         .tab-btn:hover { background: #d5d5d5; }
         .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(171, 65, 51, 0.3); }
         
@@ -156,11 +169,70 @@
         .search-dropdown li:last-child { border-bottom: none; }
         .search-dropdown li:hover, .search-dropdown li.focused { background: #f8f9fa; color: var(--primary); }
 
-        /* 返回顶部浮球样式 */
-        .back-to-top { position: fixed; bottom: 60px; right: 60px; width: 80px; height: 80px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; cursor: pointer; box-shadow: 0 4px 12px rgba(171, 65, 51, 0.4); z-index: 999; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; visibility: hidden; transform: translateY(20px); }
-        .back-to-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
-        .back-to-top:hover { transform: translateY(-5px); background: #c0392b; }
+        /* 优化后的悬浮返回顶部按钮（防遮挡，允许拖拽） */
+        .back-to-top { position: fixed; bottom: 60px; right: 60px; width: 80px; height: 80px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer; box-shadow: 0 4px 12px rgba(171, 65, 51, 0.4); z-index: 9999; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; touch-action: none; /* 防止拖拽时屏幕滚动 */ }
+        .back-to-top.show { opacity: 1; visibility: visible; }
+        .back-to-top:active { transform: scale(0.95); background: #c0392b; }
         @media (max-width: 768px) { .back-to-top { bottom: 20px; right: 20px; width: 80px; height: 80px; font-size: 2.5em; } }
+
+        /* 高级属性总览表格样式 */
+        .overview-panel { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid var(--border-color); max-width: 100%; }
+        .overview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        .overview-title { font-size: 1.05rem; font-weight: 800; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 6px; }
+        .overview-table-wrapper { width: 100%; overflow-x: auto; border-radius: 8px; border: 1px solid #dfe6e9; box-shadow: inset 0 0 4px rgba(0,0,0,0.02); }
+        .overview-table { width: 100%; border-collapse: collapse; text-align: center; min-width: 600px; background: white; }
+        .overview-table th { background: #f8f9fa; color: #636e72; font-weight: 800; padding: 14px 10px; font-size: 0.85rem; border-bottom: 2px solid #dfe6e9; white-space: nowrap; }
+        .overview-table td { padding: 12px 10px; font-size: 0.9rem; border-bottom: 1px solid #f1f2f6; transition: background-color 0.2s; }
+        .overview-table tbody tr:last-child td { border-bottom: none; }
+        .overview-table tbody tr:hover td { filter: brightness(0.95); } /* 鼠标悬浮整行变暗变清晰 */
+        .agent-name-cell { font-weight: 800; color: #2d3436; background: #fafbfc; text-align: center !important; border-right: 1px solid #f1f2f6; width: 75px !important; padding: 12px 6px !important; }
+        .overview-table th { width: auto; }
+        .stat-val { font-weight: 800; color: #2d3436; font-size: 1rem; }
+        .stat-bonus { font-size: 0.75rem; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.65); color: var(--primary); box-shadow: 0 1px 3px rgba(171,65,51,0.15); }
+        .stat-penalty { font-size: 0.7rem; color: #636e72; margin-left: 4px; font-weight: bold; opacity: 0.8; }
+        /* 修改教徒名字为居中对齐 */
+        .agent-name-cell { font-weight: 800; color: #2d3436; background: #fafbfc; text-align: center !important; border-right: 1px solid #f1f2f6; width: 110px; padding: 12px 10px !important; }
+
+        /* 新增负面效果的绿色数字徽章 */
+        .stat-penalty-badge { font-size: 0.75rem; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.7); color: #27ae60; box-shadow: 0 1px 3px rgba(39,174,96,0.15); }
+
+        /* 优化后的红系难度标签样式 */
+        .diff-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 4px; display: inline-flex; align-items: center; justify-content: center; vertical-align: text-bottom; letter-spacing: 0; }
+        .diff-easy { background: rgba(171, 65, 51, 0.05); color: var(--primary); border: 1px solid rgba(171, 65, 51, 0.2); }
+        .diff-normal { background: rgba(171, 65, 51, 0.15); color: var(--primary); border: 1px solid rgba(171, 65, 51, 0.4); }
+        .diff-hard { background: rgba(171, 65, 51, 0.4); color: white; border: 1px solid rgba(171, 65, 51, 0.6); }
+        .diff-extreme { background: rgba(171, 65, 51, 0.85); color: white; border: 1px solid var(--primary); }
+
+        /* 翻页器样式 */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .page-btn { padding: 6px 14px; border: 1px solid #dfe6e9; background: white; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.85rem; font-weight: bold; color: #2d3436; }
+        .page-btn:hover:not(:disabled) { background: #f8f9fa; border-color: var(--primary); color: var(--primary); }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-info { font-size: 0.85rem; font-weight: bold; color: #636e72; padding: 0 8px; }
+
+        /* 排序箭头样式（默认灰色，点击变色） */
+        .sort-icon { font-size: 0.7rem; color: #b2bec3; margin-left: 3px; display: inline-block; transition: 0.2s; }
+        .sortable-th:hover .sort-icon { color: #636e72; }
+
+        /* ====== 针对手机小屏幕的极限压缩与多标签适配 ====== */
+        @media (max-width: 650px) {
+            /* 如果有4个标签，自动变成 2排 x 2个 的网格布局 */
+            .tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .tab-btn { padding: 10px 0; font-size: 0.85rem; width: 100%; }
+
+            /* 表格极限压缩，彻底告别左右滑动 */
+            .overview-table { min-width: 100%; table-layout: fixed; }
+            .overview-table th, .overview-table td { padding: 4px 1px !important; font-size: 0.65rem !important; word-break: break-all; }
+            .agent-name-cell { width: auto !important; padding: 4px 2px !important; text-align: center !important; }
+            .stat-val { font-size: 0.75rem !important; }
+            .stat-bonus, .stat-penalty-badge { font-size: 0.55rem !important; margin-left: 0 !important; padding: 1px 2px !important; display: block; margin-top: 2px; }
+            
+            /* 事件总览里的特制名字列 */
+            .evt-name-td { font-size: 0.7rem !important; font-weight: bold; }
+            .evt-name-td .diff-badge { margin-left: 0; margin-top: 3px; display: inline-block; transform: scale(0.9); transform-origin: left; }
+        }
+        .sortable-th { cursor: pointer; user-select: none; transition: background-color 0.2s; }
+        .sortable-th:hover { background: #e0e4e8 !important; }
     </style>
 </head>
 <body>
@@ -192,6 +264,8 @@
         <div class="tabs">
             <button class="tab-btn" :class="{active: tab === 'sim'}" @click="changeTab('sim')">{{ t('事件模拟') }}</button>
             <button class="tab-btn" :class="{active: tab === 'roster'}" @click="changeTab('roster')">{{ t('教徒管理') }}</button>
+            <button class="tab-btn" :class="{active: tab === 'overview'}" @click="changeTab('overview')">{{ t('属性总览') }}</button>
+            <button class="tab-btn" :class="{active: tab === 'cloud'}" @click="changeTab('cloud'); fetchCloudEvents()">{{ t('事件总览') }}</button>
         </div>
 
         <div v-show="tab === 'sim'" class="sim-layout">
@@ -210,9 +284,8 @@
                     
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                         <label style="font-size: 0.8rem; font-weight: 800; color: #2d3436; white-space: nowrap;">{{ t('事件名称') }}</label>
-                        <input type="text" v-model="currentEvent.name" :placeholder="t('输入事件名称')" style="flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; background: #ffffff; transition: 0.2s;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
-                        
-                        <button class="btn-small btn-export" @click="shareEventToServer" :title="t('将当前事件要求共享到云端')" style="padding: 5px 12px; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">☁️ {{ t('上传') }}</button>
+                        <input type="text" v-model="currentEvent.name" :placeholder="t('输入事件名称')" style="flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem;">
+                        <button class="btn-small btn-export" @click="shareEventToServer" style="padding: 5px 12px; white-space: nowrap;">☁️ {{ t('上传') }}</button>
                     </div>
                     
                     <div style="position: relative;">
@@ -230,7 +303,10 @@
                                 :class="{'focused': focusedSearchIndex === idx}"
                                 @mouseover="focusedSearchIndex = idx"
                                 @click="applyCloudEvent(ce)">
-                                <strong>{{ t(ce.name) }}</strong>
+                                <div style="display: flex; align-items: center;">
+                                    <strong>{{ t(ce.name) }}</strong>
+                                    <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]" style="transform: scale(0.85); margin-left: 4px;">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
+                                </div>
                                 <span style="font-size: 0.7rem; color: #636e72;">({{ t('上场:') }}{{ ce.maxOnField }}{{ t('人') }})</span>
                             </li>
                         </ul>
@@ -239,7 +315,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="main-radar-container"><canvas id="mainRadarChart"></canvas></div>
+                <div class="main-radar-container">
+                    <div style="position: absolute; top: 0; right: 10px; z-index: 10;">
+                        <span :class="['diff-badge', getDifficulty(currentEvent.req, currentEvent.maxOnField).class]" style="margin: 0; font-size: 0.75rem; padding: 4px 8px;">{{ t(getDifficulty(currentEvent.req, currentEvent.maxOnField).label) }}</span>
+                    </div>
+                    <canvas id="mainRadarChart"></canvas>
+                </div>
                 
                 <div style="text-align: center; font-size: 0.7rem; color: #0984e3; margin-bottom: 8px; font-weight: bold;">
                     💡 {{ t('鼠标悬停在下方选择框上') }}<br>{{ t('可直接使用滚轮切换数值') }}
@@ -422,8 +503,157 @@
                 </div>
             </div>
         </div>
+        <div v-show="tab === 'overview'" style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="overview-panel">
+                <div class="overview-header">
+                    <h3 class="overview-title" style="margin-bottom: 0;">⏱️ {{ t('当前队伍实时属性') }} <span style="font-size: 0.75rem; font-weight: normal; color: #636e72;">({{ t('同步教徒管理页进度') }})</span></h3>
+                    
+                    <div style="font-size: 0.7rem; color: #636e72; display: flex; gap: 8px; align-items: center; font-weight: bold; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <span>🔺 {{ t('加成') }}:</span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(171, 65, 51, 0.05); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(171, 65, 51, 0.15); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(171, 65, 51, 0.3); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(171, 65, 51, 0.45); border-radius: 3px;"></span> {{ t('高') }}
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center; border-left: 1px solid #dfe6e9; padding-left: 8px;">
+                            <span>🔻 {{ t('负面') }}:</span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.05); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.15); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.3); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.45); border-radius: 3px;"></span> {{ t('强') }}
+                        </div>
+                    </div>
+                </div>
 
-        <div class="back-to-top" :class="{ 'show': showBackToTop }" @click="scrollToTop" :title="t('回到顶部')">
+                <div class="overview-table-wrapper">
+                    <table class="overview-table" v-if="currentStatsData.length > 0">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center; width: 110px;">{{ t('教徒') }}</th>
+                                <th v-for="stat in displayStatKeys" :key="stat">{{ t(stat) }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in currentStatsData" :key="row.name">
+                                <td class="agent-name-cell">{{ t(row.name) }}</td>
+                                <td v-for="stat in displayStatKeys" :key="stat" 
+                                    :style="{ backgroundColor: getCellColor(row.stats[stat].bonus) }">
+                                    <span class="stat-val">{{ row.stats[stat].total }}</span>
+                                    <span v-if="row.stats[stat].bonus > 0" class="stat-bonus">(+{{ row.stats[stat].bonus }})</span>
+                                    <span v-else-if="row.stats[stat].bonus < 0" class="stat-penalty-badge">({{ row.stats[stat].bonus }})</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-else class="empty-state">
+                        <strong style="font-size: 0.9rem; color: #d63031;">🚫 {{ t('暂无已解锁的教徒') }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overview-panel">
+                <div class="overview-header">
+                    <h3 class="overview-title" style="margin-bottom: 0;">🔥 {{ t('所有教徒满级属性潜力热力图') }} <span style="font-size: 0.75rem; font-weight: normal; color: #636e72;">({{ t('Lv.5 最终状态') }})</span></h3>
+                    
+                    <div style="font-size: 0.7rem; color: #636e72; display: flex; gap: 8px; align-items: center; font-weight: bold; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <span>🔺 {{ t('加成') }}:</span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(171, 65, 51, 0.05); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(171, 65, 51, 0.15); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(171, 65, 51, 0.3); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(171, 65, 51, 0.45); border-radius: 3px;"></span> {{ t('高') }}
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center; border-left: 1px solid #dfe6e9; padding-left: 8px;">
+                            <span>🔻 {{ t('负面') }}:</span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.05); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.15); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.3); border-radius: 3px;"></span>
+                            <span style="display:inline-block; width: 12px; height: 12px; background: rgba(39, 174, 96, 0.45); border-radius: 3px;"></span> {{ t('强') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overview-table-wrapper">
+                    <table class="overview-table" v-if="allAgentsMaxPotentialData.length > 0">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center; width: 110px;">{{ t('教徒') }}</th>
+                                <th v-for="stat in displayStatKeys" :key="stat">{{ t(stat) }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in allAgentsMaxPotentialData" :key="row.name">
+                                <td class="agent-name-cell">{{ t(row.name) }}</td>
+                                <td v-for="stat in displayStatKeys" :key="stat" 
+                                    :style="{ backgroundColor: getCellColor(row.stats[stat].netBonus) }">
+                                    <span class="stat-val">{{ row.stats[stat].total }}</span>
+                                    <span v-if="row.stats[stat].maxBonus > 0" class="stat-bonus">(+{{ row.stats[stat].maxBonus }})</span>
+                                    <span v-if="row.stats[stat].maxPenalty < 0" class="stat-penalty-badge">({{ row.stats[stat].maxPenalty }})</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div v-show="tab === 'cloud'">
+            <div class="overview-panel">
+                <div class="overview-header">
+                    <h3 class="overview-title" style="margin-bottom: 0;">
+                        🌐 {{ t('云端事件总览') }} 
+                        <span style="font-size: 0.75rem; color: #636e72; font-weight: normal; margin-left: 6px;">({{ t('点击表头可自动进行排序') }})</span>
+                    </h3>
+                    <input type="text" v-model="cloudTabSearchQuery" :placeholder="t('🔍 搜索云端事件...')" style="padding: 6px 12px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; width: 100%; max-width: 250px;">
+                </div>
+                
+                <div class="overview-table-wrapper" style="margin-top: 12px;">
+                    <table class="overview-table" v-if="paginatedCloudData.length > 0">
+                        <thead>
+                            <tr>
+                                <th @click="sortByCloud('name')" class="sortable-th" style="text-align: center; width: 14%;">
+                                    {{ t('事件') }} <span class="sort-icon">{{ cloudSortKey === 'name' && cloudSortOrder !== 0 ? (cloudSortOrder === 1 ? '▲' : '▼') : '↕' }}</span>
+                                </th>
+                                <th v-for="stat in displayStatKeys" :key="stat" @click="sortByCloud(stat)" class="sortable-th">
+                                    {{ t(stat) }} <span class="sort-icon">{{ cloudSortKey === stat && cloudSortOrder !== 0 ? (cloudSortOrder === 1 ? '▲' : '▼') : '↕' }}</span>
+                                </th>
+                                <th @click="sortByCloud('maxOnField')" class="sortable-th" style="width: 12%;">
+                                    {{ t('人数') }} <span class="sort-icon">{{ cloudSortKey === 'maxOnField' && cloudSortOrder !== 0 ? (cloudSortOrder === 1 ? '▲' : '▼') : '↕' }}</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="ce in paginatedCloudData" :key="ce._id || ce.name">
+                                <td class="agent-name-cell evt-name-td" style="text-align: center !important; padding-left: 0 !important;">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;">
+                                        <span>{{ t(ce.name) }}</span>
+                                        <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]" style="margin:0;">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
+                                    </div>
+                                </td>
+                                <td v-for="stat in displayStatKeys" :key="stat" style="font-weight: bold; color: #2d3436;">
+                                    {{ ce.req ? ce.req[stat] : 5 }}
+                                </td>
+                                <td style="font-weight: 900; color: var(--primary);">{{ ce.maxOnField }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div v-else class="empty-state">
+                        <strong style="font-size: 0.9rem; color: #636e72;">{{ t('暂无匹配数据，或正在从云端拉取中...') }}</strong>
+                    </div>
+                </div>
+
+                <div class="pagination" v-if="cloudTotalPages > 1">
+                    <button class="page-btn" :disabled="cloudCurrentPage === 1" @click="goToPage(1)">|&lt;</button>
+                    <button class="page-btn" :disabled="cloudCurrentPage === 1" @click="goToPage(cloudCurrentPage - 1)">&lt;</button>
+                    <span class="page-info">{{ t('第') }} {{ cloudCurrentPage }} / {{ cloudTotalPages }} {{ t('页') }}</span>
+                    <button class="page-btn" :disabled="cloudCurrentPage === cloudTotalPages" @click="goToPage(cloudCurrentPage + 1)">&gt;</button>
+                    <button class="page-btn" :disabled="cloudCurrentPage === cloudTotalPages" @click="goToPage(cloudTotalPages)">&gt;|</button>
+                </div>
+            </div>
+        </div>
+        <div class="back-to-top" ref="backToTopRef" :class="{ 'show': showBackToTop }" @click.stop="scrollToTop" :title="t('回到顶部')">
             ↑
         </div>
     </div>
@@ -437,9 +667,66 @@
 
         createApp({
             setup() {
+                // 在 setup 顶部声明引用
+                const backToTopRef = ref(null);
+
+                // 修改 scrollToTop 函数，防止拖拽后触发点击
+                let hasDragged = false;
+                const scrollToTop = (e) => { 
+                    if (hasDragged) { e.preventDefault(); return; }
+                    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                };
+
+                // 在 onMounted 内添加拖拽事件
+                onMounted(() => {
+                    window.addEventListener('scroll', () => { showBackToTop.value = window.scrollY > 300; });
+                    // ... 原有其他逻辑
+
+                    const btn = backToTopRef.value;
+                    if (btn) {
+                        let isDragging = false;
+                        let startX, startY, initialX, initialY;
+
+                        const onTouchStart = (e) => {
+                            isDragging = true; hasDragged = false;
+                            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                            const rect = btn.getBoundingClientRect();
+                            startX = clientX; startY = clientY;
+                            initialX = rect.left; initialY = rect.top;
+                            btn.style.transition = 'none'; // 拖动时禁用动画以防延迟
+                        };
+
+                        const onTouchMove = (e) => {
+                            if (!isDragging) return;
+                            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                            let dx = clientX - startX; let dy = clientY - startY;
+                            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasDragged = true;
+
+                            let newX = Math.max(0, Math.min(initialX + dx, window.innerWidth - btn.offsetWidth));
+                            let newY = Math.max(0, Math.min(initialY + dy, window.innerHeight - btn.offsetHeight));
+
+                            btn.style.left = newX + 'px';
+                            btn.style.top = newY + 'px';
+                            btn.style.bottom = 'auto'; btn.style.right = 'auto'; // 清除默认坐标
+                        };
+
+                        const onTouchEnd = () => {
+                            isDragging = false;
+                            btn.style.transition = 'opacity 0.3s, visibility 0.3s';
+                        };
+
+                        btn.addEventListener('touchstart', onTouchStart, {passive: false});
+                        document.addEventListener('touchmove', onTouchMove, {passive: false});
+                        document.addEventListener('touchend', onTouchEnd);
+                        btn.addEventListener('mousedown', onTouchStart);
+                        document.addEventListener('mousemove', onTouchMove);
+                        document.addEventListener('mouseup', onTouchEnd);
+                    }
+                });
                 const tab = ref('sim');
                 const showBackToTop = ref(false);
-                const scrollToTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); };
                 const accounts = ref([]);
                 const activeAccountIndex = ref(0);
                 
@@ -541,8 +828,100 @@
                     
                     updateChartLabels(); // 同步更新雷达图文字
                 };
-                // ======================================
+                
+                // === 难度动态评级算法 ===
+                const getDifficulty = (req, maxField) => {
+                    if (!req) return { label: '未知', class: '' };
+                    const sum = STAT_KEYS.reduce((acc, k) => acc + (req[k] || 5), 0);
+                    const people = maxField > 0 ? maxField : 1; 
+                    const score = sum / people;
 
+                    if (score <= 45) return { label: '易', class: 'diff-easy' };
+                    if (score <= 75) return { label: '普', class: 'diff-normal' };
+                    if (score <= 105) return { label: '难', class: 'diff-hard' };
+                    return { label: '极难', class: 'diff-extreme' };
+                };
+
+                // === 事件总览：搜索与翻页控制 ===
+                const cloudTabSearchQuery = ref('');
+                const cloudCurrentPage = ref(1);
+                const cloudPageSize = 20;
+
+                const cloudSortKey = ref('');
+                const cloudSortOrder = ref(0); // 0 = 无排序, -1 = 降序, 1 = 升序
+
+                const sortByCloud = (key) => {
+                    if (cloudSortKey.value === key) {
+                        if (cloudSortOrder.value === -1) {
+                            cloudSortOrder.value = 1; // 降序点击 -> 变升序
+                        } else if (cloudSortOrder.value === 1) {
+                            cloudSortOrder.value = 0; // 升序点击 -> 取消排序
+                            cloudSortKey.value = '';  // 清空选中状态
+                        }
+                    } else {
+                        cloudSortKey.value = key;
+                        cloudSortOrder.value = -1; // 点击新列 -> 默认降序
+                    }
+                };
+
+                const filteredCloudTableData = computed(() => {
+                    let data = cloudEvents.value || [];
+                    
+                    // 1. 先进行搜索过滤
+                    if (cloudTabSearchQuery.value) {
+                        const rawQuery = cloudTabSearchQuery.value;
+                        const safeQuery = (typeof tw2cn !== 'undefined' ? tw2cn(rawQuery) : rawQuery).toLowerCase();
+                        data = data.filter(ce => {
+                            if (!ce.name) return false;
+                            if (ce.name.includes(safeQuery)) return true;
+                            const pyInitials = pinyin(ce.name, { pattern: 'first', toneType: 'none', type: 'array' }).join('').toLowerCase();
+                            return pyInitials.includes(safeQuery);
+                        });
+                    }
+
+                    // 2. 然后进行排序
+                    if (cloudSortKey.value && cloudSortOrder.value !== 0) {
+                        data = [...data].sort((a, b) => {
+                            let valA, valB;
+                            if (cloudSortKey.value === 'name') {
+                                // 点击“事件”列时，按照该事件的“难度分数”进行排序
+                                valA = (STAT_KEYS.reduce((acc, k) => acc + (a.req[k] || 5), 0)) / (a.maxOnField > 0 ? a.maxOnField : 1);
+                                valB = (STAT_KEYS.reduce((acc, k) => acc + (b.req[k] || 5), 0)) / (b.maxOnField > 0 ? b.maxOnField : 1);
+                            } else if (cloudSortKey.value === 'maxOnField') {
+                                valA = a.maxOnField || 0; valB = b.maxOnField || 0;
+                            } else {
+                                valA = a.req ? (a.req[cloudSortKey.value] || 5) : 5;
+                                valB = b.req ? (b.req[cloudSortKey.value] || 5) : 5;
+                            }
+                            return (valA - valB) * cloudSortOrder.value;
+                        });
+                    } else {
+                        data = [...data].reverse(); // 取消排序时，恢复默认的最新上传在前面
+                    }
+                    
+                    return data;
+                });
+
+                // 计算总页数
+                const cloudTotalPages = computed(() => Math.ceil(filteredCloudTableData.value.length / cloudPageSize) || 1);
+
+                // 切割当前页的数据
+                const paginatedCloudData = computed(() => {
+                    const start = (cloudCurrentPage.value - 1) * cloudPageSize;
+                    return filteredCloudTableData.value.slice(start, start + cloudPageSize);
+                });
+
+                // 搜索时，自动切回第一页
+                watch(cloudTabSearchQuery, () => {
+                    cloudCurrentPage.value = 1;
+                });
+
+                // 翻页动作
+                const goToPage = (page) => {
+                    if (page >= 1 && page <= cloudTotalPages.value) {
+                        cloudCurrentPage.value = page;
+                    }
+                };
                 const createDefaultAgents = () => [
                     { name: '刘辩', isUnlocked: false, base: {智慧:35, 魅力:35, 口才:35, 气运:35, 灵感:35, 体魄:35}, skills: { '巧舌':{type:'口才', val:[0,10,20,25,35,45], level:0}, '敏锐':{type:'智慧', val:[0,5,10,20,25,30], level:0}, '吉星':{type:'气运', val:[0,5,10,15,20,25], level:0}, '仪表不凡':{type:'魅力', val:[0,10,15,25,30,40], level:0} } },
                     { name: '张角', isUnlocked: false, base: {智慧:15, 魅力:15, 口才:15, 气运:15, 灵感:15, 体魄:15}, skills: { '谋算':{type:'智慧', val:[0,15,30,50,65,80], level:0, penalty:'口才', pVal:[0,-5,-10,-20,-25,-30]}, '大贤良师':{type:'灵感', val:[0,10,15,20,25,30], level:0}, '仪表不凡':{type:'魅力', val:[0,5,10,20,25,30], level:0}, '体健':{type:'体魄', val:[0,5,10,15,20,25], level:0} } },
@@ -560,6 +939,63 @@
 
                 const currentAccount = computed(() => accounts.value[activeAccountIndex.value] || null);
                 const unlockedBelievers = computed(() => currentAccount.value ? currentAccount.value.agents.filter(a => a.isUnlocked) : []);
+
+                // 表格1：当前已解锁教徒的实时属性（完全同步教徒管理页）
+                const currentStatsData = computed(() => {
+                    if (!currentAccount.value) return [];
+                    return unlockedBelievers.value.map(agent => {
+                        return {
+                            name: agent.name,
+                            stats: getFinalStats(agent) // 里面包含了 total, base, bonus
+                        };
+                    });
+                });
+
+                // 表格2：所有教徒（包含未解锁）的满级潜力热力图
+                const allAgentsMaxPotentialData = computed(() => {
+                    if (!currentAccount.value) return [];
+                    return currentAccount.value.agents.map(agent => {
+                        let row = { name: agent.name, stats: {} };
+                        STAT_KEYS.forEach(k => {
+                            row.stats[k] = { base: agent.base[k], maxBonus: 0, maxPenalty: 0 };
+                        });
+
+                        Object.values(agent.skills).forEach(skill => {
+                            const maxVal = skill.val[5] || 0;
+                            if (maxVal > 0) row.stats[skill.type].maxBonus += maxVal;
+
+                            if (skill.penalty && skill.pVal) {
+                                const maxPVal = skill.pVal[5] || 0;
+                                if (maxPVal < 0) row.stats[skill.penalty].maxPenalty += maxPVal;
+                            }
+                        });
+
+                        // 计算该属性的最终潜力总值和净加成
+                        STAT_KEYS.forEach(k => {
+                            const s = row.stats[k];
+                            s.netBonus = s.maxBonus + s.maxPenalty;
+                            s.total = s.base + s.netBonus;
+                        });
+                        return row;
+                    });
+                });
+
+                // 核心：基于数值强度的红绿双色热力图算法
+                const getCellColor = (bonusValue) => {
+                    // 增益（浅红色系，数值越大颜色越深）
+                    if (bonusValue >= 80) return 'rgba(171, 65, 51, 0.45)';
+                    if (bonusValue >= 40) return 'rgba(171, 65, 51, 0.3)';
+                    if (bonusValue >= 25) return 'rgba(171, 65, 51, 0.15)';
+                    if (bonusValue > 0)   return 'rgba(171, 65, 51, 0.05)';
+
+                    // 负面削弱（浅绿色系，负数值的绝对值越大颜色越深）
+                    if (bonusValue <= -30) return 'rgba(39, 174, 96, 0.45)';
+                    if (bonusValue <= -20) return 'rgba(39, 174, 96, 0.3)';
+                    if (bonusValue <= -10) return 'rgba(39, 174, 96, 0.15)';
+                    if (bonusValue < 0)    return 'rgba(39, 174, 96, 0.05)';
+
+                    return 'transparent'; // 0 加成为透明
+                };
 
                 const getFinalStats = (agent) => {
                     let total = { ...agent.base }, bonus = { '智慧':0, '魅力':0, '口才':0, '气运':0, '灵感':0, '体魄':0 };
@@ -1459,7 +1895,9 @@ if (!takesSlot) {
                     handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents,
                     focusedSearchIndex, navigateSearch, selectFocusedSearch,
                     groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
-                    showBackToTop, scrollToTop,
+                    showBackToTop, scrollToTop,currentStatsData, allAgentsMaxPotentialData, getCellColor,
+                    getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
+                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud,
                     isTraditional, toggleLang, t
                 };
             }
