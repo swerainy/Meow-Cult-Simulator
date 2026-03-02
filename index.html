@@ -185,8 +185,8 @@
         .overview-table td { padding: 12px 10px; font-size: 0.9rem; border-bottom: 1px solid #f1f2f6; transition: background-color 0.2s; }
         .overview-table tbody tr:last-child td { border-bottom: none; }
         .overview-table tbody tr:hover td { filter: brightness(0.95); } /* 鼠标悬浮整行变暗变清晰 */
-        /* 修改教徒名字为居中对齐且再次缩小宽度 */
-.agent-name-cell { font-weight: 800; color: #2d3436; background: #fafbfc; text-align: center !important; border-right: 1px solid #f1f2f6; width: 60px !important; padding: 12px 6px !important; white-space: nowrap; }
+        /* 修改教徒名字为居中对齐（电脑端默认 100px） */
+        .agent-name-cell { font-weight: 800; color: #2d3436; background: #fafbfc; text-align: center !important; border-right: 1px solid #f1f2f6; width: 100px !important; padding: 12px 6px !important; white-space: nowrap; }
         .overview-table th { width: auto; }
         .stat-val { font-weight: 800; color: #2d3436; font-size: 1rem; }
         .stat-bonus { font-size: 0.75rem; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.65); color: var(--primary); box-shadow: 0 1px 3px rgba(171,65,51,0.15); }
@@ -213,15 +213,16 @@
         .sort-icon { font-size: 0.7rem; color: #b2bec3; margin-left: 3px; display: inline-block; transition: 0.2s; }
         .sortable-th:hover .sort-icon { color: #636e72; }
 
-        /* 专门解除云端事件表格“事件列”的宽度限制，防止被教徒列的 70px 影响 */
-        .evt-name-td { width: auto !important; min-width: max-content !important; }
+        /* 彻底锁定事件列宽度（防跳动），并保留样式 */
+        .evt-name-td { width: 160px !important; min-width: 160px !important; max-width: 160px !important; background: #fafbfc; border-right: 1px solid #f1f2f6; text-align: center !important; }
+        .evt-name-span { font-weight: 800; color: #2d3436; }
 
         /* 排序表头基础样式 */
         .sortable-th { cursor: pointer; user-select: none; transition: background-color 0.2s; white-space: nowrap; }
         .sortable-th:hover { background: #e0e4e8 !important; }
         
-        /* 推荐组合列样式 */
-        .rec-cell { font-size: 0.75rem; color: var(--info); font-weight: bold; padding: 12px 8px !important; min-width: 80px; line-height: 1.4; white-space: nowrap; }
+        /* 彻底锁定推荐组合列宽度，防止超长组合导致翻页跳动 */
+        .rec-cell { font-size: 0.75rem; color: var(--info); font-weight: bold; padding: 12px 8px !important; width: 140px !important; min-width: 140px !important; max-width: 140px !important; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* ====== 手机端多标签与双表格独立适配 ====== */
         @media (max-width: 650px) {
@@ -240,11 +241,28 @@
             .cloud-table { width: max-content !important; min-width: 100%; table-layout: auto !important; } 
             .cloud-table th, .cloud-table td { padding: 8px 10px !important; font-size: 0.8rem !important; white-space: nowrap !important; word-break: normal !important; }
             
-            /* 云端事件表格特有列的样式 */
-            .evt-name-td { width: auto !important; min-width: max-content !important; }
-            .evt-name-td div { flex-wrap: nowrap !important; white-space: nowrap !important; }
-            .evt-name-td .diff-badge { transform: scale(0.9); margin-left: 4px; margin-top: 0; display: inline-flex; }
-            .rec-cell { font-size: 0.75rem !important; padding: 8px 10px !important; }
+            /* 专属云端事件列样式：固定宽敞宽度防跳动，内部完美居中 */
+            .evt-name-td { width: 145px !important; min-width: 145px !important; max-width: 145px !important; padding: 8px 4px !important; text-align: center !important; }
+            .evt-name-td div { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; flex-wrap: nowrap !important; }
+            /* 名字超长保险及字体样式还原 */
+            .evt-name-span { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; color: #2d3436; }
+            .evt-name-td .diff-badge { transform: scale(0.85); margin: 0; display: inline-flex; flex-shrink: 0; }
+        }
+
+        /* 电脑端默认宽度 */
+        .th-agent { 
+            width: 150px; 
+        }
+
+        /* 手机端教徒列宽度适配（表头和数据内容统一锁定 60px） */
+        @media (max-width: 650px) {
+            .th-agent, .agent-name-cell { 
+                width: 60px !important; 
+                min-width: 60px !important; 
+                max-width: 60px !important; 
+                padding-left: 2px !important; 
+                padding-right: 2px !important;
+            }
         }
     </style>
 </head>
@@ -544,7 +562,7 @@
                     <table class="overview-table" v-if="currentStatsData.length > 0">
                         <thead>
                             <tr>
-                                <th style="text-align: center; width: 60px;">{{ t('教徒') }}</th>
+                                <th class="th-agent" style="text-align: center;">{{ t('教徒') }}</th>
                                 <th v-for="stat in displayStatKeys" :key="stat">{{ t(stat) }}</th>
                             </tr>
                         </thead>
@@ -592,7 +610,7 @@
                     <table class="overview-table" v-if="allAgentsMaxPotentialData.length > 0">
                         <thead>
                             <tr>
-                                <th style="text-align: center; width: 60px;">{{ t('教徒') }}</th>
+                                <th class="th-agent" style="text-align: center;">{{ t('教徒') }}</th>
                                 <th v-for="stat in displayStatKeys" :key="stat">{{ t(stat) }}</th>
                             </tr>
                         </thead>
@@ -626,8 +644,10 @@
                     <table class="overview-table cloud-table" v-if="paginatedCloudData.length > 0">
                         <thead>
                             <tr>
-                                <th @click="sortByCloud('name')" class="sortable-th" style="text-align: center; white-space: nowrap;">
-                                    {{ t('事件') }} <span class="sort-icon">{{ cloudSortKey === 'name' && cloudSortOrder !== 0 ? (cloudSortOrder === 1 ? '▲' : '▼') : '↕' }}</span>
+                                <th @click="sortByCloud('name')" class="sortable-th evt-name-td">
+                                    <div>
+                                        {{ t('事件') }} <span class="sort-icon">{{ cloudSortKey === 'name' && cloudSortOrder !== 0 ? (cloudSortOrder === 1 ? '▲' : '▼') : '↕' }}</span>
+                                    </div>
                                 </th>
                                 <th v-for="stat in displayStatKeys" :key="stat" @click="sortByCloud(stat)" class="sortable-th">
                                     {{ t(stat) }} <span class="sort-icon">{{ cloudSortKey === stat && cloudSortOrder !== 0 ? (cloudSortOrder === 1 ? '▲' : '▼') : '↕' }}</span>
@@ -640,10 +660,10 @@
                         </thead>
                         <tbody>
                             <tr v-for="ce in paginatedCloudData" :key="ce._id || ce.name">
-                                <td class="agent-name-cell evt-name-td" style="text-align: center !important; padding-left: 0 !important;">
-                                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: nowrap; white-space: nowrap;">
-                                        <span>{{ t(ce.name) }}</span>
-                                        <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]" style="margin:0;">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
+                                <td class="evt-name-td">
+                                    <div>
+                                        <span class="evt-name-span" :title="t(ce.name)">{{ t(ce.name) }}</span>
+                                        <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
                                     </div>
                                 </td>
                                 <td v-for="stat in displayStatKeys" :key="stat" style="font-weight: bold; color: #2d3436;">
