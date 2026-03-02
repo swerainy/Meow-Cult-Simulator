@@ -664,7 +664,13 @@
                         🌐 {{ t('云端事件总览') }} 
                         <span style="font-size: 0.75rem; color: #636e72; font-weight: normal; margin-left: 6px;">({{ t('点击表头可自动进行排序') }})</span>
                     </h3>
-                    <input type="text" v-model="cloudTabSearchQuery" :placeholder="t('🔍 搜索云端事件 (支持拼音首字母)')" style="padding: 6px 12px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; width: 100%; max-width: 250px;">
+                    
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;">
+                        <span style="font-size: 0.8rem; color: #8395a7; font-weight: bold;">
+                            {{ t('目前已收录事件') }}：{{ cloudEvents.length }} {{ t('个') }}
+                        </span>
+                        <input type="text" v-model="cloudTabSearchQuery" :placeholder="t('🔍 搜索云端事件...')" style="padding: 6px 12px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; width: 100%; max-width: 250px;">
+                    </div>
                 </div>
                 
                 <div class="overview-table-wrapper" style="margin-top: 12px;">
@@ -2200,7 +2206,7 @@ if (!takesSlot) {
                     fieldNames, results, isCalculating, groupSkillsByAgent, getSortedSkillsByLevel,
                     changeTab, clearReq, clearField, autoSelectField, toggleField, applyMultiUpgrade, updateSkill, 
                     addAccount, renameAccount, deleteAccount, exportData, triggerImport, handleImport, updateMainChart, autoCalc,
-                    handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents,
+                    handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, searchInputRef, cloudEvents, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents,
                     focusedSearchIndex, navigateSearch, selectFocusedSearch,
                     groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
                     showBackToTop, scrollToTop,currentStatsData, allAgentsMaxPotentialData, getCellColor,
