@@ -66,9 +66,9 @@
         .lvl-btn:hover { background: rgba(0,0,0,0.05); }
         .lvl-btn.active { background: var(--primary); color: white; font-weight: bold; }
 
-        .sim-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
-        @media (max-width: 900px) { .sim-layout { grid-template-columns: 1fr; } }
-        .panel { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid var(--border-color); }
+        .sim-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; width: 100%; }
+        @media (max-width: 900px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+        .panel { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid var(--border-color); max-width: 100%; overflow-x: hidden; }
         .main-radar-container { height: 210px; width: 100%; margin-bottom: 12px; position: relative; }
         .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .input-item { display: flex; flex-direction: column; gap: 2px; }
@@ -103,8 +103,18 @@
         /* 浮动提示UI：同时兼容点击(show-tt类)和悬停(:hover) */
         .tooltip-ui { position: relative; }
         .tooltip-ui::before { content: attr(data-tooltip); position: absolute; background: #2d3436; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; width: max-content; max-width: 250px; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 16px rgba(0,0,0,0.15); border: 1px solid #636e72; pointer-events: none; text-align: left; font-weight: normal; line-height: 1.5; white-space: pre-wrap; }
-        .tooltip-ui.tt-bottom::before { top: 130%; left: 0; transform: translateY(-5px); }
-        .tooltip-ui.tt-bottom.show-tt::before, .tooltip-ui.tt-bottom:hover::before { opacity: 1; visibility: visible; transform: translateY(0); }
+        .tooltip-ui.tt-bottom::before { 
+            top: 130%; 
+            left: 50%; /* 起始点放在按钮的正中间 */
+            transform: translate(-50%, -5px); /* 向左偏移自身宽度的一半，实现完美居中 */
+            max-width: 85vw; /* 加上这个保险：最宽不超过屏幕宽度的 85%，自动换行防溢出 */
+        }
+        .tooltip-ui.tt-bottom.show-tt::before, 
+        .tooltip-ui.tt-bottom:hover::before { 
+            opacity: 1; 
+            visibility: visible; 
+            transform: translate(-50%, 0); /* 保持居中状态显示 */
+        }
         .tooltip-ui.tt-left::before { top: 50%; right: 120%; transform: translateY(-50%) translateX(5px); }
         .tooltip-ui.tt-left.show-tt::before, .tooltip-ui.tt-left:hover::before { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
 
