@@ -1333,12 +1333,13 @@
                 };
 
                 const switchEvent = (idx) => { activeEventIndex.value = idx; updateMainChart(); };
+                // 【修复】标签页切换逻辑：稍微增加等待时间，确保旧存档的庞大 DOM 也渲染完毕
                 const changeTab = (t) => { 
                     tab.value = t; 
                     setTimeout(() => { 
                         if(t === 'sim') initMainChart(); 
                         if(t === 'roster') initAgentCharts(); 
-                    }, 50); 
+                    }, 120); // 从 50 改成 120 毫秒
                 };
                 const updateMainChart = () => { if(mainChart && currentEvent.value) { mainChart.data.datasets[0].data = STAT_KEYS.map(k => currentEvent.value.req[k]); mainChart.update(); } autoCalc(); };
                 
@@ -2033,11 +2034,12 @@ if (!takesSlot) {
                     try { const savedTab = localStorage.getItem('mijiao_v11_tab'); if (savedTab === 'sim' || savedTab === 'roster') tab.value = savedTab; } catch(e) {}
                     try { const f = localStorage.getItem('mijiao_v11_field'); if(f) { const parsedF = JSON.parse(f); if (Array.isArray(parsedF)) fieldNames.value = parsedF; } } catch(e) { fieldNames.value = []; }
 
-                    nextTick(() => { 
+                    // 【修复】页面刚刷新加载完时，也使用 setTimeout 替代 nextTick
+                    setTimeout(() => { 
                         initMainChart(); 
                         if(tab.value === 'roster') initAgentCharts(); 
                         if(fieldNames.value.length > 0) autoCalc(); 
-                    });
+                    }, 120);
                 });
 
                 watch(accounts, v => { localStorage.setItem('mijiao_v11_data', JSON.stringify(v)); }, { deep: true });
@@ -2049,21 +2051,22 @@ if (!takesSlot) {
                     localStorage.setItem('mijiao_v11_active_idx', newVal.toString()); 
                     
                     // 【新增】切换存档时，自动清空事件模拟板块的所有内容
-                    fieldNames.value = []; // 清空已选上场的教徒
-                    results.value = [];    // 清空计算结果
-                    events.value = [{      // 重置事件列表为初始的 1 个空白事件
+                    fieldNames.value = []; 
+                    results.value = [];    
+                    events.value = [{      
                         id: Date.now(), 
                         name: '事件 1', 
                         req: { '智慧':5, '魅力':5, '口才':5, '气运':5, '灵感':5, '体魄':5 }, 
                         maxOnField: 0 
                     }];
-                    activeEventIndex.value = 0; // 将当前选中的事件切回第 1 个
+                    activeEventIndex.value = 0; 
                     
-                    nextTick(() => { 
+                    // 【修复】把 nextTick 改成 setTimeout，让切换旧存档时也拥有动画
+                    setTimeout(() => { 
                         if (tab.value === 'roster') initAgentCharts(); 
-                        if (tab.value === 'sim') updateMainChart(); // 同步重置事件页面的雷达图UI
+                        if (tab.value === 'sim') updateMainChart(); 
                         autoCalc(); 
-                    }); 
+                    }, 120); 
                 });
 
                 return { 
