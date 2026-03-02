@@ -185,13 +185,12 @@
         .overview-table td { padding: 12px 10px; font-size: 0.9rem; border-bottom: 1px solid #f1f2f6; transition: background-color 0.2s; }
         .overview-table tbody tr:last-child td { border-bottom: none; }
         .overview-table tbody tr:hover td { filter: brightness(0.95); } /* 鼠标悬浮整行变暗变清晰 */
-        .agent-name-cell { font-weight: 800; color: #2d3436; background: #fafbfc; text-align: center !important; border-right: 1px solid #f1f2f6; width: 75px !important; padding: 12px 6px !important; }
+        /* 修改教徒名字为居中对齐且再次缩小宽度 */
+.agent-name-cell { font-weight: 800; color: #2d3436; background: #fafbfc; text-align: center !important; border-right: 1px solid #f1f2f6; width: 60px !important; padding: 12px 6px !important; white-space: nowrap; }
         .overview-table th { width: auto; }
         .stat-val { font-weight: 800; color: #2d3436; font-size: 1rem; }
         .stat-bonus { font-size: 0.75rem; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.65); color: var(--primary); box-shadow: 0 1px 3px rgba(171,65,51,0.15); }
         .stat-penalty { font-size: 0.7rem; color: #636e72; margin-left: 4px; font-weight: bold; opacity: 0.8; }
-        /* 修改教徒名字为居中对齐且缩小宽度 */
-        .agent-name-cell { font-weight: 800; color: #2d3436; background: #fafbfc; text-align: center !important; border-right: 1px solid #f1f2f6; width: 70px !important; padding: 12px 6px !important; white-space: nowrap; }
 
         /* 新增负面效果的绿色数字徽章 */
         .stat-penalty-badge { font-size: 0.75rem; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.7); color: #27ae60; box-shadow: 0 1px 3px rgba(39,174,96,0.15); }
@@ -214,25 +213,39 @@
         .sort-icon { font-size: 0.7rem; color: #b2bec3; margin-left: 3px; display: inline-block; transition: 0.2s; }
         .sortable-th:hover .sort-icon { color: #636e72; }
 
-        /* ====== 针对手机小屏幕的极限压缩与多标签适配 ====== */
+        /* 专门解除云端事件表格“事件列”的宽度限制，防止被教徒列的 70px 影响 */
+        .evt-name-td { width: auto !important; min-width: max-content !important; }
+
+        /* 排序表头基础样式 */
+        .sortable-th { cursor: pointer; user-select: none; transition: background-color 0.2s; white-space: nowrap; }
+        .sortable-th:hover { background: #e0e4e8 !important; }
+        
+        /* 推荐组合列样式 */
+        .rec-cell { font-size: 0.75rem; color: var(--info); font-weight: bold; padding: 12px 8px !important; min-width: 80px; line-height: 1.4; white-space: nowrap; }
+
+        /* ====== 手机端多标签与双表格独立适配 ====== */
         @media (max-width: 650px) {
-            /* 如果有4个标签，自动变成 2排 x 2个 的网格布局 */
+            /* 标签页依然保持 2x2 网格 */
             .tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
             .tab-btn { padding: 10px 0; font-size: 0.85rem; width: 100%; }
 
-            /* 表格极限压缩，彻底告别左右滑动 */
+            /* 1. 属性总览表格：恢复极限压缩布局，一页显示完不横滑 */
             .overview-table { min-width: 100%; table-layout: fixed; }
-            .overview-table th, .overview-table td { padding: 4px 1px !important; font-size: 0.65rem !important; word-break: break-all; }
+            .overview-table th, .overview-table td { padding: 4px 1px !important; font-size: 0.65rem !important; word-break: break-all; white-space: normal !important; }
             .agent-name-cell { width: auto !important; padding: 4px 2px !important; text-align: center !important; }
             .stat-val { font-size: 0.75rem !important; }
             .stat-bonus, .stat-penalty-badge { font-size: 0.55rem !important; margin-left: 0 !important; padding: 1px 2px !important; display: block; margin-top: 2px; }
+
+            /* 2. 云端事件表格（专属）：解除压缩，开启顺滑横滑 */
+            .cloud-table { width: max-content !important; min-width: 100%; table-layout: auto !important; } 
+            .cloud-table th, .cloud-table td { padding: 8px 10px !important; font-size: 0.8rem !important; white-space: nowrap !important; word-break: normal !important; }
             
-            /* 事件总览里的特制名字列 */
-            .evt-name-td { font-size: 0.7rem !important; font-weight: bold; }
-            .evt-name-td .diff-badge { margin-left: 0; margin-top: 3px; display: inline-block; transform: scale(0.9); transform-origin: left; }
+            /* 云端事件表格特有列的样式 */
+            .evt-name-td { width: auto !important; min-width: max-content !important; }
+            .evt-name-td div { flex-wrap: nowrap !important; white-space: nowrap !important; }
+            .evt-name-td .diff-badge { transform: scale(0.9); margin-left: 4px; margin-top: 0; display: inline-flex; }
+            .rec-cell { font-size: 0.75rem !important; padding: 8px 10px !important; }
         }
-        .sortable-th { cursor: pointer; user-select: none; transition: background-color 0.2s; }
-        .sortable-th:hover { background: #e0e4e8 !important; }
     </style>
 </head>
 <body>
@@ -531,7 +544,7 @@
                     <table class="overview-table" v-if="currentStatsData.length > 0">
                         <thead>
                             <tr>
-                                <th style="text-align: center; width: 70px;">{{ t('教徒') }}</th>
+                                <th style="text-align: center; width: 60px;">{{ t('教徒') }}</th>
                                 <th v-for="stat in displayStatKeys" :key="stat">{{ t(stat) }}</th>
                             </tr>
                         </thead>
@@ -579,7 +592,7 @@
                     <table class="overview-table" v-if="allAgentsMaxPotentialData.length > 0">
                         <thead>
                             <tr>
-                                <th style="text-align: center; width: 70px;">{{ t('教徒') }}</th>
+                                <th style="text-align: center; width: 60px;">{{ t('教徒') }}</th>
                                 <th v-for="stat in displayStatKeys" :key="stat">{{ t(stat) }}</th>
                             </tr>
                         </thead>
@@ -610,24 +623,25 @@
                 </div>
                 
                 <div class="overview-table-wrapper" style="margin-top: 12px;">
-                    <table class="overview-table" v-if="paginatedCloudData.length > 0">
+                    <table class="overview-table cloud-table" v-if="paginatedCloudData.length > 0">
                         <thead>
                             <tr>
-                                <th @click="sortByCloud('name')" class="sortable-th" style="text-align: center; width: 14%;">
+                                <th @click="sortByCloud('name')" class="sortable-th" style="text-align: center; white-space: nowrap;">
                                     {{ t('事件') }} <span class="sort-icon">{{ cloudSortKey === 'name' && cloudSortOrder !== 0 ? (cloudSortOrder === 1 ? '▲' : '▼') : '↕' }}</span>
                                 </th>
                                 <th v-for="stat in displayStatKeys" :key="stat" @click="sortByCloud(stat)" class="sortable-th">
                                     {{ t(stat) }} <span class="sort-icon">{{ cloudSortKey === stat && cloudSortOrder !== 0 ? (cloudSortOrder === 1 ? '▲' : '▼') : '↕' }}</span>
                                 </th>
-                                <th @click="sortByCloud('maxOnField')" class="sortable-th" style="width: 12%;">
+                                <th @click="sortByCloud('maxOnField')" class="sortable-th" style="white-space: nowrap;">
                                     {{ t('人数') }} <span class="sort-icon">{{ cloudSortKey === 'maxOnField' && cloudSortOrder !== 0 ? (cloudSortOrder === 1 ? '▲' : '▼') : '↕' }}</span>
                                 </th>
+                                <th style="white-space: nowrap; color: var(--info);">{{ t('推荐组合') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="ce in paginatedCloudData" :key="ce._id || ce.name">
                                 <td class="agent-name-cell evt-name-td" style="text-align: center !important; padding-left: 0 !important;">
-                                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: nowrap; white-space: nowrap;">
                                         <span>{{ t(ce.name) }}</span>
                                         <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]" style="margin:0;">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
                                     </div>
@@ -636,6 +650,9 @@
                                     {{ ce.req ? ce.req[stat] : 5 }}
                                 </td>
                                 <td style="font-weight: 900; color: var(--primary);">{{ ce.maxOnField }}</td>
+                                <td class="rec-cell">
+                                    {{ t(getQuickRecommendation(ce.req, ce.maxOnField)) }}
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -842,6 +859,64 @@
                     return { label: '极难', class: 'diff-extreme' };
                 };
 
+                // === 云端事件智能推荐算法 (优先推荐上阵人数最少的满级阵容) ===
+                const getQuickRecommendation = (req, maxField) => {
+                    if (!req || maxField <= 0) return "-";
+                    
+                    // 1. 获取所有教徒的满级潜力总属性
+                    const agents = allAgentsMaxPotentialData.value.map(a => ({
+                        name: a.name,
+                        stats: STAT_KEYS.reduce((acc, k) => { acc[k] = a.stats[k].total; return acc; }, {})
+                    }));
+                    
+                    // 2. 补一张张修的分身牌进去
+                    const zx = agents.find(a => a.name === '张修');
+                    if (zx) agents.push({ name: '张修(分)', stats: { ...zx.stats } });
+
+                    // 3. 按总属性从高到低排序，加快计算命中率
+                    agents.sort((a, b) => {
+                        const sumA = STAT_KEYS.reduce((acc, k) => acc + a.stats[k], 0);
+                        const sumB = STAT_KEYS.reduce((acc, k) => acc + b.stats[k], 0);
+                        return sumB - sumA;
+                    });
+
+                    let validCombo = null;
+
+                    // 校验函数：检查当前组合是否达标
+                    const check = (combo) => {
+                        let curStats = { '智慧':0, '魅力':0, '口才':0, '气运':0, '灵感':0, '体魄':0 };
+                        let hasGuanYu = combo.some(a => a.name === '关羽');
+                        let hasZhangFei = combo.some(a => a.name === '张飞');
+                        combo.forEach(a => {
+                            STAT_KEYS.forEach(k => { curStats[k] += a.stats[k]; });
+                        });
+                        if (hasGuanYu && hasZhangFei) curStats['魅力'] += 5; // 张飞隐藏羁绊
+                        return STAT_KEYS.every(k => curStats[k] >= (req[k] || 5));
+                    };
+
+                    // 4. 从 1 个人开始尝试，逐级增加，确保给出的组合是“最少人数”的最优解
+                    for (let targetLen = 1; targetLen <= maxField; targetLen++) {
+                        const dfs = (start, currentCombo) => {
+                            if (validCombo) return;
+                            if (currentCombo.length === targetLen) {
+                                if (check(currentCombo)) validCombo = currentCombo.map(a => a.name);
+                                return;
+                            }
+                            for (let i = start; i < agents.length; i++) {
+                                // 如果选了分身，前面必须选了张修本体
+                                if (agents[i].name === '张修(分)' && !currentCombo.some(a => a.name === '张修')) continue;
+                                currentCombo.push(agents[i]);
+                                dfs(i + 1, currentCombo);
+                                currentCombo.pop();
+                                if (validCombo) return;
+                            }
+                        };
+                        dfs(0, []);
+                        if (validCombo) break; // 只要在这个人数下找到了解，就不再尝试更多人数
+                    }
+
+                    return validCombo ? validCombo.join('+') : '无解';
+                };
                 // === 事件总览：搜索与翻页控制 ===
                 const cloudTabSearchQuery = ref('');
                 const cloudCurrentPage = ref(1);
@@ -1897,7 +1972,7 @@ if (!takesSlot) {
                     groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
                     showBackToTop, scrollToTop,currentStatsData, allAgentsMaxPotentialData, getCellColor,
                     getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
-                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud,
+                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud,getQuickRecommendation,
                     isTraditional, toggleLang, t
                 };
             }
