@@ -1333,7 +1333,13 @@
                 };
 
                 const switchEvent = (idx) => { activeEventIndex.value = idx; updateMainChart(); };
-                const changeTab = (t) => { tab.value = t; nextTick(() => { if(t === 'sim') initMainChart(); if(t === 'roster') initAgentCharts(); }); };
+                const changeTab = (t) => { 
+                    tab.value = t; 
+                    setTimeout(() => { 
+                        if(t === 'sim') initMainChart(); 
+                        if(t === 'roster') initAgentCharts(); 
+                    }, 50); 
+                };
                 const updateMainChart = () => { if(mainChart && currentEvent.value) { mainChart.data.datasets[0].data = STAT_KEYS.map(k => currentEvent.value.req[k]); mainChart.update(); } autoCalc(); };
                 
                 const clearReq = () => { 
@@ -2039,7 +2045,26 @@ if (!takesSlot) {
                 watch(events, v => { localStorage.setItem('mijiao_v11_events', JSON.stringify(v)); }, { deep: true });
                 watch(activeEventIndex, v => { localStorage.setItem('mijiao_v11_active_event_idx', v.toString()); });
                 watch(tab, (newVal) => { localStorage.setItem('mijiao_v11_tab', newVal); });
-                watch(activeAccountIndex, (newVal) => { localStorage.setItem('mijiao_v11_active_idx', newVal.toString()); nextTick(() => { if (tab.value === 'roster') initAgentCharts(); autoCalc(); }); });
+                watch(activeAccountIndex, (newVal) => { 
+                    localStorage.setItem('mijiao_v11_active_idx', newVal.toString()); 
+                    
+                    // 【新增】切换存档时，自动清空事件模拟板块的所有内容
+                    fieldNames.value = []; // 清空已选上场的教徒
+                    results.value = [];    // 清空计算结果
+                    events.value = [{      // 重置事件列表为初始的 1 个空白事件
+                        id: Date.now(), 
+                        name: '事件 1', 
+                        req: { '智慧':5, '魅力':5, '口才':5, '气运':5, '灵感':5, '体魄':5 }, 
+                        maxOnField: 0 
+                    }];
+                    activeEventIndex.value = 0; // 将当前选中的事件切回第 1 个
+                    
+                    nextTick(() => { 
+                        if (tab.value === 'roster') initAgentCharts(); 
+                        if (tab.value === 'sim') updateMainChart(); // 同步重置事件页面的雷达图UI
+                        autoCalc(); 
+                    }); 
+                });
 
                 return { 
                     tab, accounts, activeAccountIndex, currentAccount, unlockedBelievers, 
