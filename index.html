@@ -1181,23 +1181,44 @@
                     currentAccount.value.agents.forEach((agent, i) => {
                         const canvasId = 'agentRadar-' + i, canvas = document.getElementById(canvasId);
                         if (!canvas) return;
-                        if (agentCharts[canvasId]) agentCharts[canvasId].destroy();
-                        const stats = getFinalStats(agent);
                         
-                        agentCharts[canvasId] = new Chart(canvas, {
-                            type: 'radar',
-                            data: {
-                                labels: STAT_KEYS.map(k => {
-                                    const s = stats[k];
-                                    let line1 = `${t(k)}:${s.total}`;
-                                    if (s.bonus > 0) return [line1, `(+${s.bonus})`];
-                                    if (s.bonus < 0) return [line1, `(${s.bonus})`];
-                                    return line1;
-                                }),
-                                datasets: [{ data: STAT_KEYS.map(k => stats[k].total), backgroundColor: 'rgba(171, 65, 51, 0.2)', borderColor: '#e74c3c', borderWidth: 1, pointRadius: 0 }]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false, scales: { r: { startAngle: 30, min: 0, max: 100, ticks: { display: false }, pointLabels: { font: { size: 9 }, padding: 2 } } }, plugins: { legend: { display: false } } }
+                        const stats = getFinalStats(agent);
+                        const targetData = STAT_KEYS.map(k => stats[k].total);
+                        const targetLabels = STAT_KEYS.map(k => {
+                            const s = stats[k];
+                            let line1 = `${t(k)}:${s.total}`;
+                            if (s.bonus > 0) return [line1, `(+${s.bonus})`];
+                            if (s.bonus < 0) return [line1, `(${s.bonus})`];
+                            return line1;
                         });
+
+                        // 【终极修复】：不再销毁图表！利用 update 机制强制播放生长动画
+                        if (agentCharts[canvasId]) {
+                            agentCharts[canvasId].data.labels = targetLabels;
+                            agentCharts[canvasId].data.datasets[0].data = [0, 0, 0, 0, 0, 0];
+                            agentCharts[canvasId].update('none'); // 'none' 表示瞬间干瘪归零，不播退场动画
+                            
+                            setTimeout(() => {
+                                agentCharts[canvasId].data.datasets[0].data = targetData;
+                                agentCharts[canvasId].update(); // 重新灌注真实数据，触发丝滑展开动画！
+                            }, 50);
+                        } else {
+                            // 第一次创建时，先以全 0 的干瘪状态创建
+                            agentCharts[canvasId] = new Chart(canvas, {
+                                type: 'radar',
+                                data: {
+                                    labels: targetLabels,
+                                    datasets: [{ data: [0, 0, 0, 0, 0, 0], backgroundColor: 'rgba(171, 65, 51, 0.2)', borderColor: '#e74c3c', borderWidth: 1, pointRadius: 0 }]
+                                },
+                                options: { responsive: true, maintainAspectRatio: false, scales: { r: { startAngle: 30, min: 0, max: 100, ticks: { display: false }, pointLabels: { font: { size: 9 }, padding: 2 } } }, plugins: { legend: { display: false } } }
+                            });
+                            
+                            // 50毫秒后触发生长
+                            setTimeout(() => {
+                                agentCharts[canvasId].data.datasets[0].data = targetData;
+                                agentCharts[canvasId].update();
+                            }, 50);
+                        }
                     });
                 };
                 
