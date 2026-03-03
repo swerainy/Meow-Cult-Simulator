@@ -2132,6 +2132,13 @@ if (!takesSlot) {
                                                     }
                                                 }
                                             });
+
+                                            //清理掉旧存档中存在，但最新默认代码中已经改名或废弃的旧技能
+                                            Object.keys(exA.skills).forEach(oldSkill => {
+                                                if (!defA.skills[oldSkill]) {
+                                                    delete exA.skills[oldSkill]; // 果断删除旧技能
+                                                }
+                                            });
                                         }
                                     });
 
