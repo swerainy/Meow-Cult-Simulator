@@ -904,30 +904,24 @@
                 // 【新增】用于标记是否是页面刚刷新的初始加载
                 let isInitialLoad = true;
 
-                // ====== 【修改】意外任务数据改为一个空数组，准备接收云端数据 ======
-                const unexpectedTasks = ref([]);
+                const unexpectedTasks = ref([
+                    { "event": "施粥行善", "task": "饥火烧肠", "opt1": "派遣张鲁", "opt2": "智慧 50", "req": { "agent": "张鲁", "stat": "智慧", "statVal": 50 } },
+                    { "event": "教主的美貌", "task": "绘画水平", "opt1": "战斗", "opt2": "派遣干吉", "req": { "agent": "干吉" } },
+                    { "event": "夜半哭声", "task": "咪密集会", "opt1": "战斗", "opt2": "派遣刘辩", "req": { "agent": "刘辩" } },
+                    { "event": "旧神将殒", "task": "咪教当立", "opt1": "战斗", "opt2": "派遣李真", "req": { "agent": "李真" } },
+                    { "event": "久旱盼甘霖", "task": "旱天雷", "opt1": "战斗", "opt2": "气运 50", "req": { "stat": "气运", "statVal": 50 } },
+                    { "event": "祭坛高筑", "task": "朝圣之路", "opt1": "派遣刘备", "opt2": "灵感 50", "req": { "agent": "刘备", "stat": "灵感", "statVal": 50 } },
+                    { "event": "钱粮募集", "task": "薅羊毛", "opt1": "战斗", "opt2": "派遣公孙珊", "req": { "agent": "公孙珊" } },
+                    { "event": "节约口粮", "task": "霸王餐", "opt1": "战斗", "opt2": "魅力 50", "req": { "stat": "魅力", "statVal": 50 } },
+                    { "event": "祖传迷药", "task": "是药三分毒", "opt1": "派遣张修", "opt2": "灵感 50", "req": { "agent": "张修", "stat": "灵感", "statVal": 50 } },
+                    { "event": "金身塑像", "task": "审美差异", "opt1": "派遣张飞", "opt2": "魅力 50", "req": { "agent": "张飞", "stat": "魅力", "statVal": 50 } },
+                    { "event": "秘密据点", "task": "刺探秘密", "opt1": "战斗", "opt2": "口才 50", "req": { "stat": "口才", "statVal": 50 } }
+                ]);
 
-                // 【新增】专属的拉取意外任务函数
-                const fetchUnexpectedTasks = async () => {
-                    try {
-                        // 请确保你的服务器（如 Sealos）配置了这个 /getUnexpectedTasks 路由
-                        const res = await fetch(`https://mfqptanikc.sealosbja.site/getUnexpectedTasks?t=${Date.now()}`, {
-                            cache: 'no-store' 
-                        });
-                        const data = await res.json();
-                        
-                        if (Array.isArray(data)) {
-                            unexpectedTasks.value = data;
-                        } else if (data && Array.isArray(data.data)) {
-                            unexpectedTasks.value = data.data; 
-                        }
-                        
-                        // 拉取完毕后，如果当前正在事件模拟页且已经选了人，触发一次重算
-                        if (fieldNames.value.length > 0) autoCalc();
-                        
-                    } catch (error) {
-                        console.error('获取云端意外任务失败', error);
-                    }
+                // 改为普通的同步函数，不再发起网络请求
+                const fetchUnexpectedTasks = () => {
+                    // 数据已经是本地的了，只需要触发一下重算即可
+                    if (fieldNames.value.length > 0) autoCalc();
                 };
 
                 const getUnexpectedTask = (eventName) => {
@@ -2151,7 +2145,6 @@ if (!takesSlot) {
                 const { pinyin } = pinyinPro; 
                 const searchQuery = ref('');
                 const searchInputRef = ref(null); // 【新增】用于获取搜索框 DOM 以便自动聚焦
-                const cloudEvents = ref([]); 
 
                 const filteredCloudEvents = computed(() => {
                     if (!searchQuery.value) return [];
@@ -2172,55 +2165,230 @@ if (!takesSlot) {
                     });
                 });
 
-                const fetchCloudEvents = async () => {
-                    // 1. 【已删除】去掉了 if 拦截，只要点击搜索框，就重新获取
-                    
-                    try {
-                        // 2. 【修改】在网址后面加上随机时间戳，并设置 no-store，彻底粉碎浏览器的缓存机制！
-                        const res = await fetch(`https://mfqptanikc.sealosbja.site/getEvents?t=${Date.now()}`, {
-                            cache: 'no-store' 
-                        });
-                        const data = await res.json();
-                        
-                        if (Array.isArray(data)) {
-                            cloudEvents.value = data;
-                        } else if (data && Array.isArray(data.data)) {
-                            cloudEvents.value = data.data; 
-                        }
-                    } catch (error) {
-                        console.error(t('获取云端事件失败'), error);
-                    }
-                    
-                    // 【新增】刷新云端事件时，顺便也刷新意外任务库
-                    if (typeof fetchUnexpectedTasks !== 'undefined') {
-                        fetchUnexpectedTasks();
-                    }
+                // ====== 【修改2】云端事件数据本地化（已将你提供的表格数据解析为 JSON） ======
+                const staticCloudEvents = [
+                    { _id: "69a3c0d52c241b9b9ffcc525", name: "限量手办", req: { 智慧: 5, 魅力: 5, 口才: 40, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3c2cf2c241b9b9ffcc527", name: "流言四起", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 5, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3c3152c241b9b9ffcc529", name: "哭也算时间", req: { 智慧: 5, 魅力: 50, 口才: 50, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c3cf2c241b9b9ffcc52b", name: "不造谣不传谣", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3c45b2c241b9b9ffcc52d", name: "拿人钱财", req: { 智慧: 50, 魅力: 50, 口才: 5, 气运: 5, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3c4752c241b9b9ffcc52f", name: "也略懂一些拳脚", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 50 }, maxOnField: 1 },
+                    { _id: "69a3c4ba2c241b9b9ffcc531", name: "制假售假", req: { 智慧: 5, 魅力: 50, 口才: 5, 气运: 5, 灵感: 50, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3c4bc2c241b9b9ffcc532", name: "清淡饮食", req: { 智慧: 50, 魅力: 50, 口才: 5, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c5322c241b9b9ffcc536", name: "天打雷劈", req: { 智慧: 50, 魅力: 5, 口才: 5, 气运: 5, 灵感: 50, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3c5552c241b9b9ffcc538", name: "神圣狸奴", req: { 智慧: 5, 魅力: 5, 口才: 60, 气运: 60, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3c5c02c241b9b9ffcc53e", name: "仪式风波", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c5e12c241b9b9ffcc53f", name: "传奇美貌", req: { 智慧: 5, 魅力: 50, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3c5fb2c241b9b9ffcc540", name: "忏悔之心", req: { 智慧: 60, 魅力: 60, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3c6152c241b9b9ffcc541", name: "能敲一整天", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 100 }, maxOnField: 3 },
+                    { _id: "69a3c6182c241b9b9ffcc542", name: "心术", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c6542c241b9b9ffcc544", name: "反咪教邪书", req: { 智慧: 5, 魅力: 60, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3c6572c241b9b9ffcc545", name: "高效利用", req: { 智慧: 100, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3c6792c241b9b9ffcc546", name: "刺杀行动", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 60 }, maxOnField: 3 },
+                    { _id: "69a3c67f2c241b9b9ffcc548", name: "人满为患", req: { 智慧: 5, 魅力: 50, 口才: 50, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c69f2c241b9b9ffcc54b", name: "长治久安", req: { 智慧: 75, 魅力: 5, 口才: 75, 气运: 60, 灵感: 100, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3c6b32c241b9b9ffcc54c", name: "万灵神药", req: { 智慧: 5, 魅力: 5, 口才: 60, 气运: 60, 灵感: 5, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3c6c12c241b9b9ffcc54e", name: "欠债还钱", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 50, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c6df2c241b9b9ffcc551", name: "我命由天不由我", req: { 智慧: 50, 魅力: 5, 口才: 50, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c7182c241b9b9ffcc553", name: "炒谷票", req: { 智慧: 60, 魅力: 5, 口才: 60, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c7232c241b9b9ffcc554", name: "不抛弃不放弃", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 100, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3c7882c241b9b9ffcc559", name: "香火贷", req: { 智慧: 60, 魅力: 60, 口才: 60, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c7b42c241b9b9ffcc55b", name: "草药培育", req: { 智慧: 60, 魅力: 5, 口才: 60, 气运: 5, 灵感: 5, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3c7b82c241b9b9ffcc55c", name: "最欧的一次", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c7c52c241b9b9ffcc55d", name: "狂热粉丝", req: { 智慧: 50, 魅力: 5, 口才: 50, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c7eb2c241b9b9ffcc55f", name: "隐匿的信徒", req: { 智慧: 75, 魅力: 100, 口才: 5, 气运: 75, 灵感: 75, 体魄: 100 }, maxOnField: 3 },
+                    { _id: "69a3c8032c241b9b9ffcc560", name: "翘班达人", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 50, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c8132c241b9b9ffcc562", name: "修筑宫观", req: { 智慧: 5, 魅力: 75, 口才: 5, 气运: 5, 灵感: 75, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3c81d2c241b9b9ffcc563", name: "我知道你在家", req: { 智慧: 5, 魅力: 40, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3c81d2c241b9b9ffcc564", name: "不买别碰", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 60 }, maxOnField: 3 },
+                    { _id: "69a3c8272c241b9b9ffcc565", name: "赶巧不赶早", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c8282c241b9b9ffcc566", name: "巡卫的报复", req: { 智慧: 5, 魅力: 60, 口才: 60, 气运: 5, 灵感: 5, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3c8332c241b9b9ffcc567", name: "严禁内斗", req: { 智慧: 5, 魅力: 75, 口才: 5, 气运: 5, 灵感: 5, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3c8662c241b9b9ffcc56b", name: "金像的秘密", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 75, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3c87d2c241b9b9ffcc56f", name: "欲加之罪", req: { 智慧: 5, 魅力: 75, 口才: 5, 气运: 75, 灵感: 5, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3c8822c241b9b9ffcc570", name: "黑心交易", req: { 智慧: 75, 魅力: 5, 口才: 75, 气运: 5, 灵感: 5, 体魄: 30 }, maxOnField: 3 },
+                    { _id: "69a3c89d2c241b9b9ffcc572", name: "走失教徒", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3c8ce2c241b9b9ffcc575", name: "不要乱学", req: { 智慧: 5, 魅力: 50, 口才: 50, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c9012c241b9b9ffcc577", name: "旧神将殒", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c90e2c241b9b9ffcc57a", name: "梦中的遗嘱", req: { 智慧: 5, 魅力: 60, 口才: 60, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c9402c241b9b9ffcc57c", name: "喝水不忘给水人", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c94f2c241b9b9ffcc57d", name: "火树银花", req: { 智慧: 60, 魅力: 5, 口才: 60, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c9542c241b9b9ffcc57e", name: "尸体派对", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 60, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3c95d2c241b9b9ffcc57f", name: "请认准官方正品", req: { 智慧: 50, 魅力: 5, 口才: 5, 气运: 50, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c9732c241b9b9ffcc580", name: "马车难题", req: { 智慧: 5, 魅力: 50, 口才: 5, 气运: 50, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3c9982c241b9b9ffcc581", name: "眼线危机", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3c9cb2c241b9b9ffcc584", name: "试试父母的胆", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3c9ce2c241b9b9ffcc585", name: "相亲相爱一教人", req: { 智慧: 5, 魅力: 5, 口才: 100, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3c9e12c241b9b9ffcc586", name: "不败之身", req: { 智慧: 60, 魅力: 60, 口才: 5, 气运: 5, 灵感: 5, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3c9fd2c241b9b9ffcc587", name: "归途漫漫", req: { 智慧: 50, 魅力: 5, 口才: 5, 气运: 50, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3ca082c241b9b9ffcc588", name: "降本增效", req: { 智慧: 5, 魅力: 75, 口才: 75, 气运: 75, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3ca0e2c241b9b9ffcc589", name: "群鼠为患", req: { 智慧: 60, 魅力: 60, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3ca562c241b9b9ffcc58b", name: "谁的嗓门大", req: { 智慧: 5, 魅力: 5, 口才: 15, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3ca632c241b9b9ffcc58d", name: "井水贵如油", req: { 智慧: 5, 魅力: 5, 口才: 75, 气运: 5, 灵感: 75, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3ca6b2c241b9b9ffcc58e", name: "最后一程", req: { 智慧: 5, 魅力: 75, 口才: 5, 气运: 75, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3caa52c241b9b9ffcc591", name: "咪教美貌", req: { 智慧: 5, 魅力: 100, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3cac82c241b9b9ffcc592", name: "百废待兴", req: { 智慧: 75, 魅力: 75, 口才: 75, 气运: 75, 灵感: 75, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3cad32c241b9b9ffcc593", name: "乌云乌云快走开", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3caef2c241b9b9ffcc595", name: "嗷嗷待哺", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 60, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cafc2c241b9b9ffcc597", name: "刀枪不入", req: { 智慧: 5, 魅力: 5, 口才: 60, 气运: 60, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cb152c241b9b9ffcc598", name: "生财有道", req: { 智慧: 60, 魅力: 60, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cb172c241b9b9ffcc599", name: "矿下求生", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 80, 灵感: 5, 体魄: 80 }, maxOnField: 3 },
+                    { _id: "69a3cb5b2c241b9b9ffcc59b", name: "苛政猛于虎", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 60, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3cb6c2c241b9b9ffcc59d", name: "妙手回春", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cb902c241b9b9ffcc59e", name: "断了的香", req: { 智慧: 5, 魅力: 50, 口才: 5, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cba62c241b9b9ffcc59f", name: "可怖的黑水", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 60, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3cbb52c241b9b9ffcc5a0", name: "识货", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 15, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3cbc22c241b9b9ffcc5a1", name: "燃起来了", req: { 智慧: 5, 魅力: 5, 口才: 75, 气运: 5, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3cbcb2c241b9b9ffcc5a3", name: "久旱盼甘霖", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 5, 灵感: 75, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cc1e2c241b9b9ffcc5a6", name: "拳击手的练成", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 25 }, maxOnField: 2 },
+                    { _id: "69a3cc272c241b9b9ffcc5a7", name: "与人消灾", req: { 智慧: 5, 魅力: 60, 口才: 5, 气运: 60, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cc272c241b9b9ffcc5a8", name: "赌王还是赌狗", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cc2d2c241b9b9ffcc5a9", name: "教主亲笔", req: { 智慧: 5, 魅力: 80, 口才: 5, 气运: 75, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3cc432c241b9b9ffcc5aa", name: "入土为安", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 60, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3cc812c241b9b9ffcc5ab", name: "东汉幼师哪家强", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 100, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3cc842c241b9b9ffcc5ac", name: "社恐的烦恼", req: { 智慧: 25, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3ccbf2c241b9b9ffcc5ad", name: "穿肠毒药", req: { 智慧: 60, 魅力: 60, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3ccdb2c241b9b9ffcc5ae", name: "鬼城孤儿", req: { 智慧: 5, 魅力: 5, 口才: 75, 气运: 75, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3ccf52c241b9b9ffcc5b0", name: "盲目的崇拜", req: { 智慧: 5, 魅力: 30, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3ccff2c241b9b9ffcc5b1", name: "凛冬将至", req: { 智慧: 5, 魅力: 5, 口才: 80, 气运: 5, 灵感: 5, 体魄: 80 }, maxOnField: 3 },
+                    { _id: "69a3cd002c241b9b9ffcc5b2", name: "虫虫大作战", req: { 智慧: 80, 魅力: 5, 口才: 5, 气运: 5, 灵感: 80, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3cd082c241b9b9ffcc5b3", name: "亏损补救", req: { 智慧: 75, 魅力: 5, 口才: 75, 气运: 5, 灵感: 5, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3cd1e2c241b9b9ffcc5b4", name: "三眼神的零食", req: { 智慧: 75, 魅力: 5, 口才: 5, 气运: 75, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3cd312c241b9b9ffcc5b5", name: "钱粮募集", req: { 智慧: 5, 魅力: 60, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cd332c241b9b9ffcc5b7", name: "拆迁人钉子魂", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3cd4d2c241b9b9ffcc5b8", name: "教主语录", req: { 智慧: 60, 魅力: 60, 口才: 5, 气运: 5, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cd6a2c241b9b9ffcc5ba", name: "风水宝地", req: { 智慧: 5, 魅力: 5, 口才: 75, 气运: 5, 灵感: 75, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3cd832c241b9b9ffcc5bb", name: "开源节流", req: { 智慧: 75, 魅力: 5, 口才: 5, 气运: 5, 灵感: 75, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3cdb72c241b9b9ffcc5bc", name: "谁的地盘", req: { 智慧: 5, 魅力: 50, 口才: 50, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cdbb2c241b9b9ffcc5bd", name: "正教典范", req: { 智慧: 5, 魅力: 75, 口才: 75, 气运: 75, 灵感: 75, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3cdbe2c241b9b9ffcc5be", name: "好坏之辩", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 50, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3cdda2c241b9b9ffcc5bf", name: "节约口粮", req: { 智慧: 50, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3cde02c241b9b9ffcc5c0", name: "姓氏盲猜大挑战", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 100, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3ce082c241b9b9ffcc5c2", name: "知己知彼", req: { 智慧: 75, 魅力: 75, 口才: 75, 气运: 75, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3ce0c2c241b9b9ffcc5c3", name: "鸟都不鸟你", req: { 智慧: 50, 魅力: 5, 口才: 50, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3ce0e2c241b9b9ffcc5c4", name: "砸锅卖铁", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 50, 灵感: 50, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3ce962c241b9b9ffcc5c5", name: "过时衣衫", req: { 智慧: 5, 魅力: 50, 口才: 50, 气运: 50, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cece2c241b9b9ffcc5c7", name: "缺人又缺钱", req: { 智慧: 5, 魅力: 80, 口才: 5, 气运: 5, 灵感: 5, 体魄: 80 }, maxOnField: 3 },
+                    { _id: "69a3ced52c241b9b9ffcc5c8", name: "祭坛高筑", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3cf102c241b9b9ffcc5ca", name: "流浪的狸奴", req: { 智慧: 50, 魅力: 5, 口才: 50, 气运: 5, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3cf212c241b9b9ffcc5cb", name: "不可食无鱼", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 50, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3cf972c241b9b9ffcc5d0", name: "有内鬼终止交易", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3cfbe2c241b9b9ffcc5d1", name: "赎罪的黄金", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 5, 灵感: 60, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3d04e2c241b9b9ffcc5d5", name: "拍卖风云", req: { 智慧: 5, 魅力: 5, 口才: 100, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d0612c241b9b9ffcc5d6", name: "消失的羊", req: { 智慧: 5, 魅力: 60, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d0932c241b9b9ffcc5d8", name: "暗无天日", req: { 智慧: 75, 魅力: 5, 口才: 5, 气运: 75, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d0b42c241b9b9ffcc5da", name: "赠送的福利帘", req: { 智慧: 5, 魅力: 60, 口才: 60, 气运: 5, 灵感: 5, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3d0c42c241b9b9ffcc5db", name: "故土难离", req: { 智慧: 5, 魅力: 60, 口才: 60, 气运: 5, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3d0d52c241b9b9ffcc5dc", name: "紧急救场", req: { 智慧: 60, 魅力: 60, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d0da2c241b9b9ffcc5dd", name: "两小儿辩猫", req: { 智慧: 50, 魅力: 5, 口才: 50, 气运: 50, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3d11b2c241b9b9ffcc5de", name: "快闪茶馆", req: { 智慧: 5, 魅力: 60, 口才: 5, 气运: 60, 灵感: 5, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3d1e82c241b9b9ffcc5e1", name: "家长大招", req: { 智慧: 5, 魅力: 80, 口才: 5, 气运: 5, 灵感: 5, 体魄: 80 }, maxOnField: 3 },
+                    { _id: "69a3d2102c241b9b9ffcc5e2", name: "开办义学", req: { 智慧: 5, 魅力: 75, 口才: 75, 气运: 5, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d24f2c241b9b9ffcc5e4", name: "教主的美貌", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3d2822c241b9b9ffcc5e5", name: "立足之地", req: { 智慧: 75, 魅力: 75, 口才: 75, 气运: 75, 灵感: 100, 体魄: 100 }, maxOnField: 3 },
+                    { _id: "69a3d2932c241b9b9ffcc5e6", name: "颜料挑战", req: { 智慧: 100, 魅力: 75, 口才: 5, 气运: 5, 灵感: 100, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d2992c241b9b9ffcc5e7", name: "异端者", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 75, 体魄: 75 }, maxOnField: 2 },
+                    { _id: "69a3d29d2c241b9b9ffcc5e8", name: "天气之子", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3d2b82c241b9b9ffcc5e9", name: "偷米小贼", req: { 智慧: 5, 魅力: 60, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d2d92c241b9b9ffcc5ea", name: "水鬼诅咒", req: { 智慧: 75, 魅力: 75, 口才: 75, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d2ff2c241b9b9ffcc5ec", name: "金身塑像", req: { 智慧: 5, 魅力: 80, 口才: 50, 气运: 50, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3d30f2c241b9b9ffcc5ed", name: "天气预报", req: { 智慧: 75, 魅力: 5, 口才: 75, 气运: 5, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d3e72c241b9b9ffcc5ee", name: "欢迎光临", req: { 智慧: 5, 魅力: 50, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3d3fb2c241b9b9ffcc5ef", name: "谁在说谎", req: { 智慧: 80, 魅力: 5, 口才: 5, 气运: 5, 灵感: 80, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d4212c241b9b9ffcc5f0", name: "打倒谣言", req: { 智慧: 80, 魅力: 80, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d42e2c241b9b9ffcc5f1", name: "施粥行善", req: { 智慧: 75, 魅力: 75, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3d4cd2c241b9b9ffcc5f2", name: "美美的很安心", req: { 智慧: 5, 魅力: 100, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d57b2c241b9b9ffcc5f3", name: "不得安息", req: { 智慧: 5, 魅力: 75, 口才: 75, 气运: 5, 灵感: 5, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3d5832c241b9b9ffcc5f4", name: "风声走漏", req: { 智慧: 75, 魅力: 75, 口才: 75, 气运: 5, 灵感: 75, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3d5bb2c241b9b9ffcc5f6", name: "二川合流", req: { 智慧: 100, 魅力: 75, 口才: 5, 气运: 75, 灵感: 100, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3d5ca2c241b9b9ffcc5f7", name: "不想干活", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 60 }, maxOnField: 3 },
+                    { _id: "69a3d5eb2c241b9b9ffcc5f9", name: "特级咒物", req: { 智慧: 75, 魅力: 5, 口才: 5, 气运: 5, 灵感: 75, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d5fe2c241b9b9ffcc5fa", name: "薯薯我啊", req: { 智慧: 60, 魅力: 5, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3d7242c241b9b9ffcc5fb", name: "暗中交易", req: { 智慧: 60, 魅力: 5, 口才: 60, 气运: 5, 灵感: 60, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3d88b2c241b9b9ffcc5ff", name: "流动神像", req: { 智慧: 5, 魅力: 75, 口才: 5, 气运: 5, 灵感: 75, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3d8eb2c241b9b9ffcc600", name: "纵火手段", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 5, 体魄: 60 }, maxOnField: 3 },
+                    { _id: "69a3d9082c241b9b9ffcc601", name: "祖传迷药", req: { 智慧: 50, 魅力: 5, 口才: 5, 气运: 50, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3d9622c241b9b9ffcc602", name: "夜半哭声", req: { 智慧: 5, 魅力: 50, 口才: 5, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3d9de2c241b9b9ffcc604", name: "值完这个值那个", req: { 智慧: 100, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3dafe2c241b9b9ffcc607", name: "颗粒归仓", req: { 智慧: 75, 魅力: 5, 口才: 5, 气运: 75, 灵感: 5, 体魄: 100 }, maxOnField: 3 },
+                    { _id: "69a3db032c241b9b9ffcc609", name: "山泉热水", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 80, 体魄: 80 }, maxOnField: 3 },
+                    { _id: "69a3db722c241b9b9ffcc60a", name: "秘密据点", req: { 智慧: 75, 魅力: 75, 口才: 5, 气运: 5, 灵感: 5, 体魄: 75 }, maxOnField: 2 },
+                    { _id: "69a3dd082c241b9b9ffcc611", name: "天降赔偿金", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 15, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3dd3a2c241b9b9ffcc612", name: "吸引力法则", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 25 }, maxOnField: 2 },
+                    { _id: "69a3de3d2c241b9b9ffcc614", name: "无处不飞花", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 15, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3de702c241b9b9ffcc615", name: "猫咪胡须", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 25, 灵感: 5, 体魄: 25 }, maxOnField: 2 },
+                    { _id: "69a3de7e2c241b9b9ffcc616", name: "择木而栖", req: { 智慧: 75, 魅力: 75, 口才: 75, 气运: 75, 灵感: 5, 体魄: 100 }, maxOnField: 3 },
+                    { _id: "69a3deb72c241b9b9ffcc617", name: "你看到了什么", req: { 智慧: 20, 魅力: 5, 口才: 5, 气运: 20, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3decd2c241b9b9ffcc618", name: "靡靡之音", req: { 智慧: 75, 魅力: 5, 口才: 5, 气运: 75, 灵感: 5, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3dee32c241b9b9ffcc619", name: "巧舌如簧", req: { 智慧: 5, 魅力: 5, 口才: 15, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3df2e2c241b9b9ffcc61a", name: "混乱纷争", req: { 智慧: 5, 魅力: 30, 口才: 5, 气运: 5, 灵感: 5, 体魄: 30 }, maxOnField: 2 },
+                    { _id: "69a3df472c241b9b9ffcc61b", name: "乌鸦效应", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 80, 体魄: 80 }, maxOnField: 3 },
+                    { _id: "69a3df602c241b9b9ffcc61c", name: "降临派", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 50 }, maxOnField: 1 },
+                    { _id: "69a3df632c241b9b9ffcc61d", name: "消失的他", req: { 智慧: 20, 魅力: 5, 口才: 5, 气运: 5, 灵感: 20, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3dfaf2c241b9b9ffcc61e", name: "坏天气", req: { 智慧: 5, 魅力: 5, 口才: 20, 气运: 5, 灵感: 20, 体魄: 20 }, maxOnField: 2 },
+                    { _id: "69a3dfde2c241b9b9ffcc61f", name: "谁能晋升", req: { 智慧: 5, 魅力: 5, 口才: 20, 气运: 20, 灵感: 5, 体魄: 20 }, maxOnField: 3 },
+                    { _id: "69a3dff82c241b9b9ffcc621", name: "恶鬼附身", req: { 智慧: 50, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3e0032c241b9b9ffcc622", name: "回扣的诱惑", req: { 智慧: 25, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3e0142c241b9b9ffcc623", name: "不许贩人", req: { 智慧: 5, 魅力: 30, 口才: 30, 气运: 5, 灵感: 30, 体魄: 30 }, maxOnField: 3 },
+                    { _id: "69a3e04a2c241b9b9ffcc624", name: "猫派还是狗派", req: { 智慧: 5, 魅力: 30, 口才: 5, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3e0a72c241b9b9ffcc625", name: "香火逃亡", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 15, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3e0ad2c241b9b9ffcc626", name: "谁是卧底", req: { 智慧: 40, 魅力: 5, 口才: 40, 气运: 40, 灵感: 40, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3e0e12c241b9b9ffcc627", name: "美丽的秘密", req: { 智慧: 5, 魅力: 5, 口才: 20, 气运: 5, 灵感: 5, 体魄: 20 }, maxOnField: 2 },
+                    { _id: "69a3e1762c241b9b9ffcc628", name: "晒书日", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 40, 灵感: 5, 体魄: 5 }, maxOnField: 1 },
+                    { _id: "69a3e2ae2c241b9b9ffcc629", name: "贵贵贵", req: { 智慧: 25, 魅力: 5, 口才: 25, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3e2cf2c241b9b9ffcc62a", name: "让我先走行不行", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 100 }, maxOnField: 3 },
+                    { _id: "69a3e3222c241b9b9ffcc62b", name: "五斗咪实习生", req: { 智慧: 5, 魅力: 5, 口才: 60, 气运: 5, 灵感: 60, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a3e3c42c241b9b9ffcc62d", name: "菌子甚毒", req: { 智慧: 5, 魅力: 80, 口才: 5, 气运: 5, 灵感: 80, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3e5812c241b9b9ffcc630", name: "找茬行家", req: { 智慧: 5, 魅力: 20, 口才: 5, 气运: 5, 灵感: 25, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3e6182c241b9b9ffcc631", name: "不明飞行物", req: { 智慧: 30, 魅力: 30, 口才: 5, 气运: 30, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3e6282c241b9b9ffcc633", name: "鬼鬼鬼", req: { 智慧: 20, 魅力: 20, 口才: 5, 气运: 5, 灵感: 20, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3e6342c241b9b9ffcc634", name: "藏宝图", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 50, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3e6432c241b9b9ffcc635", name: "互浇香炉", req: { 智慧: 75, 魅力: 75, 口才: 5, 气运: 5, 灵感: 5, 体魄: 75 }, maxOnField: 3 },
+                    { _id: "69a3e6b72c241b9b9ffcc637", name: "泥给路打油", req: { 智慧: 40, 魅力: 5, 口才: 5, 气运: 40, 灵感: 5, 体魄: 40 }, maxOnField: 3 },
+                    { _id: "69a3ec3b2c241b9b9ffcc63d", name: "虔信匠人", req: { 智慧: 75, 魅力: 75, 口才: 5, 气运: 5, 灵感: 75, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3f00c2c241b9b9ffcc642", name: "工程必经路", req: { 智慧: 5, 魅力: 5, 口才: 25, 气运: 5, 灵感: 25, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a3f2712c241b9b9ffcc646", name: "别在我这犯浑", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 100, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a3f3c12c241b9b9ffcc647", name: "有的是力气", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 5, 体魄: 40 }, maxOnField: 1 },
+                    { _id: "69a3f54d2c241b9b9ffcc64b", name: "盗贼的极意", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 5, 灵感: 5, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a3f6c92c241b9b9ffcc650", name: "叛徒", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 5, 体魄: 60 }, maxOnField: 3 },
+                    { _id: "69a3f7a72c241b9b9ffcc652", name: "运货须谨慎", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a400e02c241b9b9ffcc662", name: "消失的美貌", req: { 智慧: 5, 魅力: 60, 口才: 5, 气运: 60, 灵感: 5, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a415272c241b9b9ffcc66e", name: "蝗蝗不可终日", req: { 智慧: 5, 魅力: 5, 口才: 50, 气运: 50, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a4272f2c241b9b9ffcc684", name: "苟政猛于虎", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 60, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a43f852c241b9b9ffcc690", name: "甚是喧嚣", req: { 智慧: 30, 魅力: 30, 口才: 5, 气运: 5, 灵感: 30, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a447f52c241b9b9ffcc697", name: "鱼与熊掌", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 60, 灵感: 60, 体魄: 5 }, maxOnField: 3 },
+                    { _id: "69a4533c2c241b9b9ffcc69d", name: "药草培育", req: { 智慧: 60, 魅力: 5, 口才: 60, 气运: 5, 灵感: 5, 体魄: 60 }, maxOnField: 2 },
+                    { _id: "69a4538b2c241b9b9ffcc69e", name: "小心火烛", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 50, 灵感: 50, 体魄: 50 }, maxOnField: 2 },
+                    { _id: "69a45a8d2c241b9b9ffcc6a1", name: "画饼充饥", req: { 智慧: 60, 魅力: 60, 口才: 60, 气运: 5, 灵感: 5, 体魄: 5 }, maxOnField: 2 },
+                    { _id: "69a4b24ac7d591f0a9024dd2", name: "失走教徒", req: { 智慧: 5, 魅力: 5, 口才: 5, 气运: 5, 灵感: 50, 体魄: 5 }, maxOnField: 1 }
+                ];
+
+                const cloudEvents = ref([...staticCloudEvents]);
+
+                // 改为普通的同步函数，不再发起网络请求
+                const fetchCloudEvents = () => {
+                    // 数据已经在本地的 staticCloudEvents 中了，无需做任何处理
                 };
 
                 // 【新增】上传功能总开关：改成 true 即可瞬间恢复所有上传功能，改成 false 则关闭
                 const isUploadEnabled = false;
 
-                const shareEventToServer = async () => {
-                    // 如果开关是关闭状态，直接弹出提示并终止运行
-                    if (!isUploadEnabled) {
-                        alert(t('感谢您的积极参与与贡献！目前云端事件库已基本收集完善，上传功能暂行关闭。若您发现了尚未收录的全新事件，欢迎单独带图反馈。'));
-                        return;
-                    }
-
+                // ====== 【修改3】改为保存在本地浏览器内存中 ======
+                const shareEventToServer = () => {
                     const ev = currentEvent.value;
                     let name = ev.name ? ev.name.trim() : "";
 
-                    // 【新增】在校验和上传前，自动将用户输入的繁体字转为简体
+                    // 简繁转换支持
                     if (typeof tw2cn !== 'undefined') {
                         name = tw2cn(name);
                     }
                     
+                    // 校验部分保持不变
                     if (!name || name === '事件' || name.startsWith('事件 ')) {
                         alert(t('提示：请输入正确的事件名字。'));
                         return;
                     }
 
-                    // 【新增】禁止上传只有一个字的事件
                     if (name.length < 2) {
                         alert(t('提示：请输入正确、完整的事件名称。'));
                         return;
@@ -2250,27 +2418,21 @@ if (!takesSlot) {
                         return;
                     }
 
-                    try {
-                        const payload = {
-                            name: name,
-                            req: ev.req,
-                            maxOnField: ev.maxOnField
-                        };
+                    // 创建一条新的本地数据记录
+                    const payload = {
+                        _id: Date.now().toString(), // 本地临时 ID
+                        name: name,
+                        req: { ...ev.req },
+                        maxOnField: ev.maxOnField
+                    };
 
-                        await fetch('https://mfqptanikc.sealosbja.site/addEvent', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-
-                        alert(t('事件') + '【' + name + '】' + t('已成功共享至云端！'));
-                        
-                        const existIdx = cloudEvents.value.findIndex(c => c.name === name);
-                        if (existIdx > -1) cloudEvents.value[existIdx] = payload;
-                        else cloudEvents.value.push(payload);
-
-                    } catch (error) {
-                        alert(t('上传失败，请检查网络。'));
+                    alert(t('事件') + '【' + name + '】' + t('已成功保存到本地（注意：刷新网页后该自定事件会失效）！'));
+                    
+                    const existIdx = cloudEvents.value.findIndex(c => c.name === name);
+                    if (existIdx > -1) {
+                        cloudEvents.value[existIdx] = payload;
+                    } else {
+                        cloudEvents.value.push(payload);
                     }
                 };
 
@@ -2337,8 +2499,8 @@ if (!takesSlot) {
 
                 onMounted(() => {
                     // 【新增】页面一打开，就在后台悄悄去云端拉取意外事件库
-                    fetchUnexpectedTasks();
-                    setInterval(checkUpdate, 5 * 60 * 1000);
+                    //fetchUnexpectedTasks();
+                    //setInterval(checkUpdate, 5 * 60 * 1000);
                     
                     // 当玩家把网页切到后台，过了一会儿又切回来时，立刻检查一次
                     document.addEventListener('visibilitychange', () => {
