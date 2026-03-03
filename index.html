@@ -282,6 +282,18 @@
         }
         .update-banner button:hover { transform: scale(1.05); }
         @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        /* 【修复】手机端靠左侧的按钮提示框出界问题 */
+        @media (max-width: 650px) {
+            .site-switch-btn.tooltip-ui.tt-bottom::before {
+                left: 0; 
+                transform: translate(0, -5px); /* 取消向左偏移 50%，改为与按钮左侧对齐 */
+            }
+            .site-switch-btn.tooltip-ui.tt-bottom.show-tt::before, 
+            .site-switch-btn.tooltip-ui.tt-bottom:hover::before {
+                transform: translate(0, 0);
+            }
+        }
     </style>
 </head>
 <body>
