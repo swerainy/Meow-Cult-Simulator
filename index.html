@@ -229,7 +229,7 @@
 
             .btn-group { width: 100%; gap: 6px; }
             .btn-small { padding: 6px 0 !important; font-size: 0.75rem !important; flex: 1; text-align: center; }
-            
+
             /* 标签页依然保持 2x2 网格 */
             .tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
             .tab-btn { padding: 10px 0; font-size: 0.85rem; width: 100%; }
@@ -2153,6 +2153,18 @@ if (!takesSlot) {
                         }
                     });
 
+                    document.addEventListener('focusin', (e) => {
+                        const target = e.target;
+                        // 如果选中的是文本输入框
+                        if (target && target.tagName === 'INPUT' && target.type === 'text') {
+                            // 稍微延迟 300 毫秒，等待手机虚拟键盘完全弹起
+                            setTimeout(() => {
+                                // 强制将该输入框平滑滚动到屏幕的垂直正中间
+                                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 300);
+                        }
+                    });
+                    
                     try {
                         const s = localStorage.getItem('mijiao_v11_data');
                         if (s) {
