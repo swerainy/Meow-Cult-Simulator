@@ -187,29 +187,25 @@
         .tooltip-ui.tt-left.show-tt::before, .tooltip-ui.tt-left:hover::before { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
 
         @media (max-width: 650px) {
-            /* 1. 基础限制：防止提示框宽度超过屏幕 */
             .tooltip-ui::before { 
-                max-width: 80vw !important; 
+                max-width: 75vw !important; 
                 font-size: 0.75rem !important;
                 white-space: normal !important;
             }
 
-            /* 2. 顶部站点切换/简繁切换按钮（靠近左侧）：强制向右对齐，防止左侧切断 */
             .site-switch-btn.tooltip-ui.tt-bottom::before,
             .lang-switch-btn.tooltip-ui.tt-bottom::before {
-                left: 0 !important;
+                left: 8px !important; /* 修复左侧切断 */
                 right: auto !important;
                 transform: translate(0, 0) !important;
             }
 
-            /* 3. 事件模拟页：右侧标签（难度/意外）强制向左对齐，防止右侧切断 */
             .main-radar-container .tooltip-ui.tt-bottom::before {
                 left: auto !important;
-                right: 0 !important;
+                right: -10px !important; /* 修复右侧切断 */
                 transform: translate(0, 0) !important;
             }
 
-            /* 4. 事件总览/搜索列表：靠近左侧，强制向右弹出 */
             .cloud-table .tooltip-ui.tt-down-right::before,
             .search-dropdown .tooltip-ui.tt-down-right::before {
                 left: 0 !important;
@@ -284,116 +280,76 @@
             font-size: 0.9rem; 
             border-bottom: 1px solid #f1f2f6; 
             transition: background-color 0.2s; 
-            position: relative; /*确保 z-index 在单元格上生效 */
+            /* 【关键修复】已移除 position: relative */
         }
         .overview-table tbody tr:last-child td { border-bottom: none; }
-        .overview-table tbody tr:hover td { filter: brightness(0.95); } /* 鼠标悬浮整行变暗变清晰 */
-        /* 修改教徒名字为居中对齐（电脑端默认 100px） */
+        .overview-table tbody tr:hover td { filter: brightness(0.95); } 
+        
         .agent-name-cell { font-weight: 800; color: #2d3436; background: #fafbfc; text-align: center !important; border-right: 1px solid #f1f2f6; width: 100px !important; padding: 12px 6px !important; white-space: nowrap; }
         .overview-table th { width: auto; }
+        .th-agent { width: 150px; }
+        
         .stat-val { font-weight: 800; color: #2d3436; font-size: 1rem; }
         .stat-bonus { font-size: 0.75rem; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.65); color: var(--primary); box-shadow: 0 1px 3px rgba(171,65,51,0.15); }
         .stat-penalty { font-size: 0.7rem; color: #636e72; margin-left: 4px; font-weight: bold; opacity: 0.8; }
-
-        /* 新增负面效果的绿色数字徽章 */
         .stat-penalty-badge { font-size: 0.75rem; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.7); color: #27ae60; box-shadow: 0 1px 3px rgba(39,174,96,0.15); }
+        .stat-locked-badge { font-size: 0.7rem; font-weight: bold; margin-left: 4px; display: inline-flex; align-items: center; justify-content: center; padding: 1px 5px; border-radius: 6px; background: #fff3cd; color: #d35400; border: 1px solid #ffeeba; box-shadow: 0 1px 2px rgba(211, 84, 0, 0.05); cursor: help; }
 
-        /* 优化后的红系难度标签样式 */
         .diff-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 4px; display: inline-flex; align-items: center; justify-content: center; vertical-align: text-bottom; letter-spacing: 0; }
         .diff-easy { background: rgba(171, 65, 51, 0.05); color: var(--primary); border: 1px solid rgba(171, 65, 51, 0.2); }
         .diff-normal { background: rgba(171, 65, 51, 0.15); color: var(--primary); border: 1px solid rgba(171, 65, 51, 0.4); }
         .diff-hard { background: rgba(171, 65, 51, 0.4); color: white; border: 1px solid rgba(171, 65, 51, 0.6); }
         .diff-extreme { background: rgba(171, 65, 51, 0.85); color: white; border: 1px solid var(--primary); }
         .diff-unexpected { background: #9b59b6; color: white; border: 1px solid #8e44ad; cursor: help; }
-
-        /* 翻页器样式 */
+        
         .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
         .page-btn { padding: 6px 14px; border: 1px solid #dfe6e9; background: white; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.85rem; font-weight: bold; color: #2d3436; }
         .page-btn:hover:not(:disabled) { background: #f8f9fa; border-color: var(--primary); color: var(--primary); }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .page-info { font-size: 0.85rem; font-weight: bold; color: #636e72; padding: 0 8px; }
-
-        /* 排序箭头样式（默认灰色，点击变色） */
         .sort-icon { font-size: 0.7rem; color: #b2bec3; margin-left: 3px; display: inline-block; transition: 0.2s; }
         .sortable-th:hover .sort-icon { color: #636e72; }
-
-        /* 彻底锁定事件列宽度（防跳动），并保留样式 */
         .evt-name-td { width: 160px !important; min-width: 160px !important; max-width: 160px !important; background: #fafbfc; border-right: 1px solid #f1f2f6; text-align: center !important; }
         .evt-name-span { font-weight: 800; color: #2d3436; }
-
-        /* 排序表头基础样式 */
         .sortable-th { cursor: pointer; user-select: none; transition: background-color 0.2s; white-space: nowrap; }
         .sortable-th:hover { background: #e0e4e8 !important; }
-        
-        /* 彻底锁定推荐组合列宽度，防止超长组合导致翻页跳动 */
         .rec-cell { font-size: 0.75rem; color: var(--info); font-weight: bold; padding: 12px 8px !important; width: 140px !important; min-width: 140px !important; max-width: 140px !important; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* 1. 只有难度时的同行样式：强制水平排列 */
+        /* ====== 【全局布局】 ====== */
         .evt-layout-inline { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; flex-wrap: nowrap; }
         .evt-layout-inline-search { display: flex; align-items: center; justify-content: flex-start; gap: 6px; flex-wrap: nowrap; }
-        
-        /* 2. 两个标签都在时的分行样式：强制垂直排列 */
         .evt-layout-column { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 100%; }
         .evt-layout-column-search { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-
-        .evt-name-span { 
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
-            font-weight: 800; color: #2d3436; display: inline-block; 
-            vertical-align: middle; max-width: 180px; 
-        }
+        .evt-name-span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; color: #2d3436; display: inline-block; vertical-align: middle; max-width: 180px; }
         .evt-badge-row { display: flex; gap: 4px; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        /* ====== 手机端多标签与双表格独立适配 ====== */
+        /* ====== 手机端响应式适配 ====== */
         @media (max-width: 650px) {
-
             .btn-group { width: 100%; gap: 6px; }
             .btn-small { padding: 6px 0 !important; font-size: 0.75rem !important; flex: 1; text-align: center; }
-
-            /* 标签页依然保持 2x2 网格 */
             .tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
             .tab-btn { padding: 10px 0; font-size: 0.85rem; width: 100%; }
 
-            /* 1. 属性总览表格：恢复极限压缩布局，一页显示完不横滑 */
             .overview-table { min-width: 100%; table-layout: fixed; }
             .overview-table th, .overview-table td { padding: 4px 1px !important; font-size: 0.65rem !important; word-break: break-all; white-space: normal !important; }
             .agent-name-cell { width: auto !important; padding: 4px 2px !important; text-align: center !important; }
             .stat-val { font-size: 0.75rem !important; }
-            .stat-bonus, .stat-penalty-badge { font-size: 0.55rem !important; margin-left: 0 !important; padding: 1px 2px !important; display: block; margin-top: 2px; }
+            .stat-bonus, .stat-penalty-badge, .stat-locked-badge { font-size: 0.55rem !important; margin-left: 0 !important; padding: 1px 2px !important; display: block; margin-top: 2px; }
 
-            /* 2. 云端事件表格（专属）：解除压缩，开启顺滑横滑 */
             .cloud-table { width: max-content !important; min-width: 100%; table-layout: auto !important; } 
             .cloud-table th, .cloud-table td { padding: 8px 10px !important; font-size: 0.8rem !important; white-space: nowrap !important; word-break: normal !important; }
             
             .evt-name-td { width: 145px !important; min-width: 145px !important; max-width: 145px !important; padding: 6px 2px !important; }
             
-            .evt-layout-inline .evt-name-span { max-width: 90px !important; }
+            .evt-layout-inline .evt-name-span { max-width: 110px !important; }
             .evt-layout-inline-search .evt-name-span { max-width: 130px !important; }
-            
             .evt-layout-column .evt-name-span { max-width: 135px !important; }
             .evt-layout-column-search .evt-name-span { max-width: 160px !important; }
 
             .evt-name-td .diff-badge { transform: scale(0.82); margin: 0; }
-
-        /* 电脑端默认宽度 */
-        .th-agent { 
-            width: 150px; 
+            .th-agent, .agent-name-cell { width: 60px !important; min-width: 60px !important; max-width: 60px !important; padding-left: 2px !important; padding-right: 2px !important; }
         }
 
-        /* 【新增】待解锁才能的浅黄色徽章样式 */
-        .stat-locked-badge { font-size: 0.7rem; font-weight: bold; margin-left: 4px; display: inline-flex; align-items: center; justify-content: center; padding: 1px 5px; border-radius: 6px; background: #fff3cd; color: #d35400; border: 1px solid #ffeeba; box-shadow: 0 1px 2px rgba(211, 84, 0, 0.05); cursor: help; }
-        
-        /* 手机端教徒列宽度适配（表头和数据内容统一锁定 60px） */
-        @media (max-width: 650px) {
-            .stat-bonus, .stat-penalty-badge, .stat-locked-badge { font-size: 0.55rem !important; margin-left: 0 !important; padding: 1px 2px !important; display: block; margin-top: 2px; }
-            .th-agent, .agent-name-cell { 
-                width: 60px !important; 
-                min-width: 60px !important; 
-                max-width: 60px !important; 
-                padding-left: 2px !important; 
-                padding-right: 2px !important;
-            }
-        }
-        }
 
         /* 智能更新提示条样式 */
         .update-banner {
@@ -1250,7 +1206,7 @@
                                 });
                                 if (!basePass) return false;
                                 
-                                // 【新增】校验意外任务，如果失败则该组合作废
+                                // 【优化】意外任务：优先尝试满足特定要求，若有“战斗”保底则不作废方案
                                 const ut = getUnexpectedTask(eventName);
                                 if (ut) {
                                     let hasReqAgent = ut.req.agent && combo.some(a => a.name.includes(ut.req.agent));
@@ -1260,7 +1216,12 @@
                                         if (ut.req.stat === '魅力') totalStat += bonusCharm;
                                         if (totalStat >= ut.req.statVal) statPass = true;
                                     }
-                                    if (!hasReqAgent && !statPass) return false;
+                                    
+                                    // 判断是否有“战斗”选项作为默认保底
+                                    const isCombatAllowed = (ut.opt1 === '战斗' || ut.opt2 === '战斗');
+                                    
+                                    // 如果既没满足特定要求，也没有战斗保底，才作废该方案
+                                    if (!hasReqAgent && !statPass && !isCombatAllowed) return false;
                                 }
                                 return true;
                             }
@@ -1832,6 +1793,11 @@
                                 results.value = topResults.sort((a, b) => {
                                     // 1. 优先比拼完成的事件数量（越多越好）
                                     if (a.completedCount !== b.completedCount) return b.completedCount - a.completedCount;
+
+                                    const bonusA = a.eventPaths.filter(ep => ep.sol && ep.sol.unexpectedBonusMet).length;
+                                    const bonusB = b.eventPaths.filter(ep => ep.sol && ep.sol.unexpectedBonusMet).length;
+                                    if (bonusA !== bonusB) return bonusB - bonusA;
+
                                     // 2. 其次比拼资源消耗（越少越好）
                                     if (a.necklaces !== b.necklaces) return a.necklaces - b.necklaces;
                                     if (a.talismans !== b.talismans) return a.talismans - b.talismans;
@@ -1876,15 +1842,19 @@
                 function findOptimalForSingleEvent(combo, target, eventName) {
                     let targetStats = STAT_KEYS.map(k => target[k] || 0);
                     
-                    // 【新增】融入意外任务的硬性指标要求进行安全剪枝
+                    // 【优化】融入意外任务指标：若有战斗保底，不再强行拔高剪枝要求
                     const ut = getUnexpectedTask(eventName);
                     let targetStatsForPruning = [...targetStats];
-                    let hasRequiredAgent = ut && ut.req.agent && combo.some(a => a.name.includes(ut.req.agent));
-                    
-                    if (ut && ut.req.stat && !hasRequiredAgent) {
-                        const sIdx = STAT_KEYS.indexOf(ut.req.stat);
-                        if (sIdx !== -1 && ut.req.statVal > targetStatsForPruning[sIdx]) {
-                            targetStatsForPruning[sIdx] = ut.req.statVal; // 拔高要求以保证意外任务必过
+                    const isCombatAllowed = ut && (ut.opt1 === '战斗' || ut.opt2 === '战斗');
+
+                    // 只有在没有战斗保底的情况下，才为了意外任务强行拔高属性要求
+                    if (ut && ut.req.stat && !isCombatAllowed) {
+                        let hasRequiredAgent = ut.req.agent && combo.some(a => a.name.includes(ut.req.agent));
+                        if (!hasRequiredAgent) {
+                            const sIdx = STAT_KEYS.indexOf(ut.req.stat);
+                            if (sIdx !== -1 && ut.req.statVal > targetStatsForPruning[sIdx]) {
+                                targetStatsForPruning[sIdx] = ut.req.statVal; 
+                            }
                         }
                     }
 
@@ -2085,22 +2055,27 @@ if (!takesSlot) {
                         if (idx === combo.length) {
                             for (let i=0; i<6; i++) if (currentStats[i] < targetStats[i]) return;
                             
-                            // 【新增】最终双重校验：确保意外任务的属性也绝对达标
-                            if (ut && !hasRequiredAgent) {
+                            // 【优化】记录并校验意外任务达成情况
+                            let unexpectedBonusMet = false;
+                            if (ut) {
+                                let hasReqAgent = ut.req.agent && combo.some(a => a.name.includes(ut.req.agent));
+                                let statPass = false;
                                 if (ut.req.stat) {
                                     const sIdx = STAT_KEYS.indexOf(ut.req.stat);
-                                    if (sIdx !== -1 && currentStats[sIdx] < ut.req.statVal) return; // 失败作废
-                                } else {
-                                    return; // 仅限战力和固定密探，没有达标则作废
+                                    if (sIdx !== -1 && currentStats[sIdx] >= ut.req.statVal) statPass = true;
                                 }
+                                if (hasReqAgent || statPass) unexpectedBonusMet = true;
+                                
+                                // 若未达成优选目标且没有战斗保底，则方案非法
+                                if (!unexpectedBonusMet && !isCombatAllowed) return; 
                             }
 
                             if (currentCost < bestCost) {
                                 bestCost = currentCost;
-                                best = { necklaces: currentNeck, talismans: currentTali, skillDetails: [...currentSkillDetails], score: currentCost, upgrades: [...currentUpgrades] };
+                                best = { necklaces: currentNeck, talismans: currentTali, skillDetails: [...currentSkillDetails], score: currentCost, upgrades: [...currentUpgrades], unexpectedBonusMet: unexpectedBonusMet };
                             }
-                            return;
-                        }
+                            return; 
+                        } 
 
                         const states = agentStatesList[idx];
                         for (let i = 0; i < states.length; i++) {
@@ -2519,7 +2494,7 @@ if (!takesSlot) {
                     showBackToTop, scrollToTop, currentStatsData, allAgentsMaxPotentialData, getCellColor,
                     getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
                     backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage, searchInputRef, isStableSite, showSiteTooltip, siteTooltipText, handleSiteSwitch, unexpectedTasks, getUnexpectedTask,
-                    isTraditional, toggleLang, t
+                    isTraditional, toggleLang, t,
                 };
             }
         }).mount('#app');
