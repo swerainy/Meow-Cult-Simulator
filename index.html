@@ -81,7 +81,16 @@
 
         .sim-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; width: 100%; }
         @media (max-width: 900px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
-        .panel { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid var(--border-color); max-width: 100%; overflow-x: hidden; }
+        /* 【修复】移除 overflow-x: hidden，这是导致文本框被切断的罪魁祸首 */
+        .panel { 
+            background: white; 
+            padding: 16px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
+            border: 1px solid var(--border-color); 
+            max-width: 100%; 
+            overflow: hidden; /* 防止内容捅破卡片 */
+        }
         .main-radar-container { height: 210px; width: 100%; margin-bottom: 12px; position: relative; }
         .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .input-item { display: flex; flex-direction: column; gap: 2px; }
@@ -113,23 +122,102 @@
         .btn-ghost { background: transparent; border: 1px solid #b2bec3; color: #636e72; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; }
         .btn-ghost:hover { background: #f1f2f6; color: #2d3436; border-color: #636e72; }
 
-        /* 浮动提示UI：同时兼容点击(show-tt类)和悬停(:hover) */
+        /* 浮动提示UI：基础定位 */
         .tooltip-ui { position: relative; }
-        .tooltip-ui::before { content: attr(data-tooltip); position: absolute; background: #2d3436; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; width: max-content; max-width: 250px; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 16px rgba(0,0,0,0.15); border: 1px solid #636e72; pointer-events: none; text-align: left; font-weight: normal; line-height: 1.5; white-space: pre-wrap; }
+
+        /* 【核心修复】提升激活状态下的容器层级，确保父容器不挡住子元素 */
+        .tooltip-ui:hover, 
+        .tooltip-ui.show-tt,
+        td:has(.tooltip-ui:hover),
+        td:has(.tooltip-ui.show-tt) { 
+            z-index: 1000000 !important; 
+            position: relative;
+        }
+
+        /* 【核心修复】文本框样式：强制横排、高置顶、自动换行 */
+        .tooltip-ui::before { 
+            content: attr(data-tooltip); 
+            position: absolute; 
+            background: #2d3436; 
+            color: #fff; 
+            padding: 10px 14px; 
+            border-radius: 8px; 
+            font-size: 0.8rem; 
+            width: max-content; 
+            max-width: 260px; 
+            z-index: 9999999 !important; 
+            opacity: 0; 
+            visibility: hidden; 
+            transition: all 0.2s ease; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3); 
+            border: 1px solid #636e72; 
+            pointer-events: none; 
+            text-align: left; 
+            line-height: 1.6; 
+            white-space: normal !important; 
+            word-wrap: break-word; 
+            writing-mode: horizontal-tb !important; /* 强制横排，防竖排继承 */
+        }
+
+        /* 【新增】雷达图竖排标签样式 */
+        .vertical-badge {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            padding: 8px 4px !important;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* 电脑端默认居中弹出 */
         .tooltip-ui.tt-bottom::before { 
-            top: 130%; 
-            left: 50%; /* 起始点放在按钮的正中间 */
-            transform: translate(-50%, -5px); /* 向左偏移自身宽度的一半，实现完美居中 */
-            max-width: min(85vw, 300px); /* 【修复】限制电脑端最大为 300px 强制换行，手机端最大为屏幕 85% 防溢出 */
+            top: 120%; 
+            left: 50%;
+            transform: translate(-50%, -10px);
         }
-        .tooltip-ui.tt-bottom.show-tt::before, 
-        .tooltip-ui.tt-bottom:hover::before { 
-            opacity: 1; 
-            visibility: visible; 
-            transform: translate(-50%, 0); /* 保持居中状态显示 */
+        .tooltip-ui.tt-bottom:hover::before,
+        .tooltip-ui.tt-bottom.show-tt::before { 
+            opacity: 1; visibility: visible; transform: translate(-50%, 0); 
         }
+
+        /* 辅助定位样式 */
+        .tooltip-ui.tt-down-right::before { top: 130%; left: 0; transform: translate(0, -10px); }
+        .tooltip-ui.tt-down-right:hover::before, .tooltip-ui.tt-down-right.show-tt::before { opacity: 1; visibility: visible; transform: translate(0, 0); }
         .tooltip-ui.tt-left::before { top: 50%; right: 120%; transform: translateY(-50%) translateX(5px); }
         .tooltip-ui.tt-left.show-tt::before, .tooltip-ui.tt-left:hover::before { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
+
+        /* ====== 【终极修复】手机端适配：全方位防止提示框溢出屏幕 ====== */
+        @media (max-width: 650px) {
+            /* 1. 基础限制：防止提示框宽度超过屏幕 */
+            .tooltip-ui::before { 
+                max-width: 80vw !important; 
+                font-size: 0.75rem !important;
+                white-space: normal !important;
+            }
+
+            /* 2. 顶部站点切换/简繁切换按钮（靠近左侧）：强制向右对齐，防止左侧切断 */
+            .site-switch-btn.tooltip-ui.tt-bottom::before,
+            .lang-switch-btn.tooltip-ui.tt-bottom::before {
+                left: 0 !important;
+                right: auto !important;
+                transform: translate(0, 0) !important;
+            }
+
+            /* 3. 事件模拟页：右侧标签（难度/意外）强制向左对齐，防止右侧切断 */
+            .main-radar-container .tooltip-ui.tt-bottom::before {
+                left: auto !important;
+                right: 0 !important;
+                transform: translate(0, 0) !important;
+            }
+
+            /* 4. 事件总览/搜索列表：靠近左侧，强制向右弹出 */
+            .cloud-table .tooltip-ui.tt-down-right::before,
+            .search-dropdown .tooltip-ui.tt-down-right::before {
+                left: 0 !important;
+                right: auto !important;
+                transform: translate(0, 0) !important;
+            }
+        }
 
         .empty-state { text-align: center; padding: 24px 12px; background: #fafbfc; border: 1px dashed #dfe6e9; border-radius: 8px; margin-top: 10px; }
         .event-path-block { margin-top: 10px; padding: 12px; background: white; border-radius: 8px; border: 1px solid #dfe6e9; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
@@ -179,10 +267,26 @@
         .overview-panel { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid var(--border-color); max-width: 100%; }
         .overview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
         .overview-title { font-size: 1.05rem; font-weight: 800; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 6px; }
-        .overview-table-wrapper { width: 100%; overflow-x: auto; border-radius: 8px; border: 1px solid #dfe6e9; box-shadow: inset 0 0 4px rgba(0,0,0,0.02); }
+        /* 【修复】彻底移除溢出隐藏，允许提示框弹出表格边界 */
+        .panel { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid var(--border-color); max-width: 100%; overflow: visible !important; }
+        
+        .overview-table-wrapper { 
+            width: 100%; 
+            overflow-x: auto !important; /* 关键：允许横向滚动 */
+            border-radius: 8px; 
+            border: 1px solid #dfe6e9; 
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.02); 
+            padding-bottom: 60px; /* 【重要】留出底部空间，防止最后一行提示框被挡住 */
+        }
         .overview-table { width: 100%; border-collapse: collapse; text-align: center; min-width: 600px; background: white; }
         .overview-table th { background: #f8f9fa; color: #636e72; font-weight: 800; padding: 14px 10px; font-size: 0.85rem; border-bottom: 2px solid #dfe6e9; white-space: nowrap; }
-        .overview-table td { padding: 12px 10px; font-size: 0.9rem; border-bottom: 1px solid #f1f2f6; transition: background-color 0.2s; }
+        .overview-table td { 
+            padding: 12px 10px; 
+            font-size: 0.9rem; 
+            border-bottom: 1px solid #f1f2f6; 
+            transition: background-color 0.2s; 
+            position: relative; /*确保 z-index 在单元格上生效 */
+        }
         .overview-table tbody tr:last-child td { border-bottom: none; }
         .overview-table tbody tr:hover td { filter: brightness(0.95); } /* 鼠标悬浮整行变暗变清晰 */
         /* 修改教徒名字为居中对齐（电脑端默认 100px） */
@@ -201,6 +305,7 @@
         .diff-normal { background: rgba(171, 65, 51, 0.15); color: var(--primary); border: 1px solid rgba(171, 65, 51, 0.4); }
         .diff-hard { background: rgba(171, 65, 51, 0.4); color: white; border: 1px solid rgba(171, 65, 51, 0.6); }
         .diff-extreme { background: rgba(171, 65, 51, 0.85); color: white; border: 1px solid var(--primary); }
+        .diff-unexpected { background: #9b59b6; color: white; border: 1px solid #8e44ad; cursor: help; }
 
         /* 翻页器样式 */
         .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
@@ -287,27 +392,6 @@
         .update-banner button:hover { transform: scale(1.05); }
         @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 
-        /* 【修复】手机端靠左侧的按钮提示框出界及卡住问题 */
-        @media (max-width: 650px) {
-            .site-switch-btn.tooltip-ui.tt-bottom::before {
-                left: 0; 
-                transform: translate(0, -5px); 
-            }
-            .site-switch-btn.tooltip-ui.tt-bottom.show-tt::before, 
-            .site-switch-btn.tooltip-ui.tt-bottom:hover::before {
-                transform: translate(0, 0);
-            }
-            
-            /* 手机端直接隐藏“简/繁”切换的提示框，防止点击后卡在屏幕上阻挡视线 */
-            .lang-switch-btn.tooltip-ui::before {
-                display: none !important;
-            }
-
-            .notice-badge.tooltip-ui:not(.show-tt):hover::before {
-                opacity: 0 !important;
-                visibility: hidden !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -392,6 +476,7 @@
                                 @click="applyCloudEvent(ce)">
                                 <div style="display: flex; align-items: center;">
                                     <strong>{{ t(ce.name) }}</strong>
+                                    <span v-if="getUnexpectedTask(ce.name)" class="diff-badge diff-unexpected" style="transform: scale(0.85); margin-left: 4px;">❗ {{ t('意外') }}</span>
                                     <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]" style="transform: scale(0.85); margin-left: 4px;">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
                                 </div>
                                 <span style="font-size: 0.7rem; color: #636e72;">({{ t('上场:') }}{{ ce.maxOnField }}{{ t('人') }})</span>
@@ -403,8 +488,10 @@
                     </div>
                 </div>
                 <div class="main-radar-container">
-                    <div style="position: absolute; top: 0; right: 10px; z-index: 10;">
+                    <div style="position: absolute; top: 0; right: 0; z-index: 10; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
                         <span :class="['diff-badge', getDifficulty(currentEvent.req, currentEvent.maxOnField).class]" style="margin: 0; font-size: 0.75rem; padding: 4px 8px;">{{ t(getDifficulty(currentEvent.req, currentEvent.maxOnField).label) }}</span>
+                        
+                        <span v-if="getUnexpectedTask(currentEvent.name)" class="diff-badge diff-unexpected tooltip-ui tt-bottom vertical-badge" style="margin: 0; font-size: 0.75rem;" :data-tooltip="t('该事件附带意外任务（两个选项满足其一即可）。算法推荐的方案已确保【主事件】与【意外任务】均能 100% 达成。')">❗{{ t('意外') }}</span>
                     </div>
                     <canvas id="mainRadarChart"></canvas>
                 </div>
@@ -464,7 +551,9 @@
                         <div v-for="ep in r.eventPaths" :key="ep.eventId" class="event-path-block">
                             <template v-if="ep.isCompleted">
                                 <div class="ep-title">📌 {{ t(ep.eventName) }}：{{ ep.sol.names.map(n => t(n)).join(' + ') }}</div>
-                                
+                                <div v-if="getUnexpectedTask(ep.eventName)" style="font-size: 0.75rem; color: #8e44ad; font-weight: bold; margin-bottom: 6px; padding-left: 24px;">
+                                    ❗ {{ t('包含意外任务') }}：【{{ t(getUnexpectedTask(ep.eventName).task) }}】({{ t(getUnexpectedTask(ep.eventName).opt1) }} / {{ t(getUnexpectedTask(ep.eventName).opt2) }})
+                                </div>
                                 <div v-if="ep.sol.skillDetails && ep.sol.skillDetails.length > 0" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
                                     <div v-for="grp in groupSkillsByAgent(ep.sol.skillDetails)" :key="grp.agent" 
                                          style="background: #ffffff; border: 1px solid #dfe6e9; border-radius: 8px; padding: 10px;">
@@ -692,6 +781,35 @@
         </div>
 
         <div v-show="tab === 'cloud'">
+            <div class="overview-panel" style="margin-bottom: 20px;">
+                <div class="overview-header">
+                    <h3 class="overview-title" style="margin-bottom: 0; display: inline-flex; align-items: baseline; gap: 8px;">
+                        🌟 {{ t('特殊事件及对应意外任务汇总') }}
+                        <span style="font-size: 0.7rem; color: #8395a7; font-weight: normal; white-space: nowrap;">{{ t('数据仍在收集中...... 鸣谢 xhs@七七') }}</span>
+                    </h3>
+                </div>
+                <div class="overview-table-wrapper">
+                    <table class="overview-table cloud-table">
+                        <thead>
+                            <tr>
+                                <th>{{ t('事件名称') }}</th>
+                                <th>{{ t('意外任务') }}</th>
+                                <th>{{ t('选项 1') }}</th>
+                                <th>{{ t('选项 2') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="ut in unexpectedTasks" :key="ut.event">
+                                <td style="font-weight: 800; color: #2d3436;">{{ t(ut.event) }}</td>
+                                <td style="color: #8e44ad; font-weight: bold;"> {{ t(ut.task) }}</td>
+                                <td>{{ t(ut.opt1) }}</td>
+                                <td>{{ t(ut.opt2) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="overview-panel">
                 <div class="overview-header">
                     <h3 class="overview-title" style="margin-bottom: 0;">
@@ -730,6 +848,7 @@
                                 <td class="evt-name-td">
                                     <div>
                                         <span class="evt-name-span" :title="t(ce.name)">{{ t(ce.name) }}</span>
+                                        <span v-if="getUnexpectedTask(ce.name)" class="diff-badge diff-unexpected tooltip-ui tt-down-right" :data-tooltip="t('该事件附带意外任务（两个选项满足其一即可）。算法推荐的方案已确保【主事件】与【意外任务】均能 100% 达成。')">❗ {{ t('意外') }}</span>
                                         <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
                                     </div>
                                 </td>
@@ -738,7 +857,7 @@
                                 </td>
                                 <td style="font-weight: 900; color: var(--primary);">{{ ce.maxOnField }}</td>
                                 <td class="rec-cell">
-                                    {{ t(getQuickRecommendation(ce.req, ce.maxOnField)) }}
+                                    {{ t(getQuickRecommendation(ce.req, ce.maxOnField, ce.name)) }}
                                 </td>
                             </tr>
                         </tbody>
@@ -805,6 +924,38 @@
 
                 // 【新增】用于标记是否是页面刚刷新的初始加载
                 let isInitialLoad = true;
+
+                // ====== 【修改】意外任务数据改为一个空数组，准备接收云端数据 ======
+                const unexpectedTasks = ref([]);
+
+                // 【新增】专属的拉取意外任务函数
+                const fetchUnexpectedTasks = async () => {
+                    try {
+                        // 请确保你的服务器（如 Sealos）配置了这个 /getUnexpectedTasks 路由
+                        const res = await fetch(`https://mfqptanikc.sealosbja.site/getUnexpectedTasks?t=${Date.now()}`, {
+                            cache: 'no-store' 
+                        });
+                        const data = await res.json();
+                        
+                        if (Array.isArray(data)) {
+                            unexpectedTasks.value = data;
+                        } else if (data && Array.isArray(data.data)) {
+                            unexpectedTasks.value = data.data; 
+                        }
+                        
+                        // 拉取完毕后，如果当前正在事件模拟页且已经选了人，触发一次重算
+                        if (fieldNames.value.length > 0) autoCalc();
+                        
+                    } catch (error) {
+                        console.error('获取云端意外任务失败', error);
+                    }
+                };
+
+                const getUnexpectedTask = (eventName) => {
+                    if (!eventName || unexpectedTasks.value.length === 0) return null;
+                    const safeName = typeof tw2cn !== 'undefined' ? tw2cn(eventName) : eventName;
+                    return unexpectedTasks.value.find(t => safeName.includes(t.event));
+                };
 
                 // 修改 scrollToTop 函数，防止拖拽后触发点击
                 let hasDragged = false;
@@ -1006,7 +1157,7 @@
                 };
 
                 // === 云端事件智能推荐算法 (优先推荐上阵人数最少的满级阵容) ===
-                const getQuickRecommendation = (req, maxField) => {
+                const getQuickRecommendation = (req, maxField, eventName) => {
                     if (!req || maxField <= 0) return "-";
                     if (!currentAccount.value) return "无解";
                     
@@ -1066,19 +1217,35 @@
                         let bonusCharm = (hasGuanYu && hasZhangFei) ? 5 : 0; // 张飞隐藏羁绊
 
                         // 递归检查组合中的每个人
+                        // 递归检查组合中的每个人
                         const evaluate = (idx, currentSums) => {
                             if (idx === combo.length) {
-                                return STAT_KEYS.every(k => {
+                                let basePass = STAT_KEYS.every(k => {
                                     let total = currentSums[k];
                                     if (k === '魅力') total += bonusCharm;
                                     return total >= (req[k] || 5);
                                 });
+                                if (!basePass) return false;
+                                
+                                // 【新增】校验意外任务，如果失败则该组合作废
+                                const ut = getUnexpectedTask(eventName);
+                                if (ut) {
+                                    let hasReqAgent = ut.req.agent && combo.some(a => a.name.includes(ut.req.agent));
+                                    let statPass = false;
+                                    if (ut.req.stat) {
+                                        let totalStat = currentSums[ut.req.stat];
+                                        if (ut.req.stat === '魅力') totalStat += bonusCharm;
+                                        if (totalStat >= ut.req.statVal) statPass = true;
+                                    }
+                                    if (!hasReqAgent && !statPass) return false;
+                                }
+                                return true;
                             }
-                            // 遍历第 idx 个人的所有合法的(最多2技能)属性组合
+                            
+                            // 【修复】补回之前被意外删掉的下半部分遍历代码
                             for (let profile of combo[idx].profiles) {
                                 let nextSums = { ...currentSums };
                                 STAT_KEYS.forEach(k => nextSums[k] += profile[k]);
-                                // 只要有一种搭配能成功，就说明这个阵容可行，立刻返回 true
                                 if (evaluate(idx + 1, nextSums)) return true;
                             }
                             return false;
@@ -1599,7 +1766,8 @@
                                             }
                                         });
 
-                                        const sol = findOptimalForSingleEvent(processedCombo, ev.req);
+                                        // 【修改】传入 eventName
+                                        const sol = findOptimalForSingleEvent(processedCombo, ev.req, ev.name);
                                         if (sol) {
                                             let names = processedCombo.map(a => a.name);
                                             if (hasClone) names.push('张修(分身)');
@@ -1681,8 +1849,22 @@
                     }, 300);
                 }
 
-                function findOptimalForSingleEvent(combo, target) {
+                // 【修改】加入 eventName 参数
+                function findOptimalForSingleEvent(combo, target, eventName) {
                     let targetStats = STAT_KEYS.map(k => target[k] || 0);
+                    
+                    // 【新增】融入意外任务的硬性指标要求进行安全剪枝
+                    const ut = getUnexpectedTask(eventName);
+                    let targetStatsForPruning = [...targetStats];
+                    let hasRequiredAgent = ut && ut.req.agent && combo.some(a => a.name.includes(ut.req.agent));
+                    
+                    if (ut && ut.req.stat && !hasRequiredAgent) {
+                        const sIdx = STAT_KEYS.indexOf(ut.req.stat);
+                        if (sIdx !== -1 && ut.req.statVal > targetStatsForPruning[sIdx]) {
+                            targetStatsForPruning[sIdx] = ut.req.statVal; // 拔高要求以保证意外任务必过
+                        }
+                    }
+
                     let baseStats = [0,0,0,0,0,0];
                     let maxPossible = [0,0,0,0,0,0];
                     let totalBaseStats = [0,0,0,0,0,0]; 
@@ -1870,16 +2052,26 @@ if (!takesSlot) {
 
                     const dfs = (idx, currentCost, currentNeck, currentTali) => {
                         if (abort) return;
-                        // 【修改】大幅放宽搜索上限，从 5000 提升至 300000，防止算一半放弃
                         if (dfsCounter++ > 300000) { abort = true; return; } 
 
-                        // 【新增核心逻辑】如果当前属性 + 后面所有人能提供的极限属性，依然达不到目标，直接淘汰这条死路！
                         for (let j = 0; j < 6; j++) {
-                            if (currentStats[j] + suffixMax[idx][j] < targetStats[j]) return;
+                            // 【修改】使用更严格的 targetStatsForPruning 进行剪枝
+                            if (currentStats[j] + suffixMax[idx][j] < targetStatsForPruning[j]) return;
                         }
 
                         if (idx === combo.length) {
                             for (let i=0; i<6; i++) if (currentStats[i] < targetStats[i]) return;
+                            
+                            // 【新增】最终双重校验：确保意外任务的属性也绝对达标
+                            if (ut && !hasRequiredAgent) {
+                                if (ut.req.stat) {
+                                    const sIdx = STAT_KEYS.indexOf(ut.req.stat);
+                                    if (sIdx !== -1 && currentStats[sIdx] < ut.req.statVal) return; // 失败作废
+                                } else {
+                                    return; // 仅限战力和固定密探，没有达标则作废
+                                }
+                            }
+
                             if (currentCost < bestCost) {
                                 bestCost = currentCost;
                                 best = { necklaces: currentNeck, talismans: currentTali, skillDetails: [...currentSkillDetails], score: currentCost, upgrades: [...currentUpgrades] };
@@ -1999,6 +2191,11 @@ if (!takesSlot) {
                         }
                     } catch (error) {
                         console.error(t('获取云端事件失败'), error);
+                    }
+                    
+                    // 【新增】刷新云端事件时，顺便也刷新意外任务库
+                    if (typeof fetchUnexpectedTasks !== 'undefined') {
+                        fetchUnexpectedTasks();
                     }
                 };
 
@@ -2141,6 +2338,8 @@ if (!takesSlot) {
                 };
 
                 onMounted(() => {
+                    // 【新增】页面一打开，就在后台悄悄去云端拉取意外事件库
+                    fetchUnexpectedTasks();
                     setInterval(checkUpdate, 5 * 60 * 1000);
                     
                     // 当玩家把网页切到后台，过了一会儿又切回来时，立刻检查一次
@@ -2287,15 +2486,15 @@ if (!takesSlot) {
                     tab, accounts, activeAccountIndex, currentAccount, unlockedBelievers, 
                     statKeys: STAT_KEYS, displayStatKeys: DISPLAY_STAT_KEYS, reqOptions: REQ_OPTIONS,
                     events, currentEvent, activeEventIndex, addEvent, removeEvent, switchEvent, clearAllEvents,
-                    fieldNames, results, isCalculating, groupSkillsByAgent, getSortedSkillsByLevel,
+                    fieldNames, results, isCalculating, 
                     changeTab, clearReq, clearField, autoSelectField, toggleField, applyMultiUpgrade, updateSkill, 
                     addAccount, renameAccount, deleteAccount, exportData, triggerImport, handleImport, updateMainChart, autoCalc,
-                    handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, searchInputRef, cloudEvents, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents,
+                    handleStatWheel, handleMaxFieldWheel, toggleAgentLock, showNotice, toggleNotice, searchQuery, cloudEvents, filteredCloudEvents, applyCloudEvent, shareEventToServer, fetchCloudEvents,
                     focusedSearchIndex, navigateSearch, selectFocusedSearch,
                     groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
-                    showBackToTop, scrollToTop,currentStatsData, allAgentsMaxPotentialData, getCellColor,
+                    showBackToTop, scrollToTop, currentStatsData, allAgentsMaxPotentialData, getCellColor,
                     getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
-                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage, searchInputRef,isStableSite, showSiteTooltip, siteTooltipText, handleSiteSwitch,
+                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage, searchInputRef, isStableSite, showSiteTooltip, siteTooltipText, handleSiteSwitch, unexpectedTasks, getUnexpectedTask,
                     isTraditional, toggleLang, t
                 };
             }
