@@ -296,6 +296,14 @@
                 <span class="notice-badge tooltip-ui tt-bottom" :class="{'show-tt': showNotice}" @click.stop="toggleNotice" :data-tooltip="t('⚠️ 注意事项：本网页数据保存在浏览器本地，请尽量避免在微信内直接打开，以免缓存被清理导致数据丢失。同时注意浏览器不要开启无痕模式。跨设备请务必使用「导出/导入」功能。')">{{ t('注意事项') }}</span>
             </div>
             <div class="account-controls">
+                <button class="btn-small tooltip-ui tt-bottom site-switch-btn" 
+                        :class="{'show-tt': showSiteTooltip}"
+                        style="background: #2d3436; color: #74b9ff; border: 1px solid #74b9ff; padding: 4px 10px;" 
+                        @click.stop="handleSiteSwitch" 
+                        :data-tooltip="siteTooltipText">
+                    🌐 {{ isStableSite ? t('稳定站') : t('最新站') }}
+                </button>
+
                 <button class="btn-small tooltip-ui tt-bottom" style="background: #2d3436; color: #fdcb6e; border: 1px solid #fdcb6e; padding: 4px 10px;" @click="toggleLang" :data-tooltip="t('切换简体/繁体中文')">
                     {{ isTraditional ? t('繁') : t('简') }}
                 </button>
@@ -828,6 +836,33 @@
                     }
                 });
                 const tab = ref('sim');
+
+                // ====== 【新增】站点切换逻辑 ======
+                const isStableSite = ref(window.location.hostname === 'meow.maayuan.top');
+                const showSiteTooltip = ref(false);
+                
+                // 动态计算提示文字
+                const siteTooltipText = computed(() => {
+                    return isStableSite.value 
+                        ? t('当前为稳定站，最新更新需要一些时间同步。\n点击跳转至最新站：\nhttps://swerainy.github.io/Meow-Cult-Simulator/')
+                        : t('当前为最新站。\n点击跳转至稳定站：\nhttps://meow.maayuan.top/');
+                });
+
+                const handleSiteSwitch = (e) => {
+                    // 如果是触屏设备（手机/平板），第一次点击只显示提示框，拦截跳转
+                    if (window.matchMedia("(hover: none)").matches || 'ontouchstart' in window) {
+                        if (!showSiteTooltip.value) {
+                            showSiteTooltip.value = true;
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+                    // 电脑端点击，或者手机端第二次点击，执行页面跳转
+                    window.location.href = isStableSite.value 
+                        ? 'https://swerainy.github.io/Meow-Cult-Simulator/' 
+                        : 'https://meow.maayuan.top/';
+                };
+                
                 const showBackToTop = ref(false);
                 const accounts = ref([]);
                 const activeAccountIndex = ref(0);
@@ -2096,6 +2131,10 @@ if (!takesSlot) {
                         if (!e.target.closest('.notice-badge')) {
                             showNotice.value = false;
                         }
+                        // 【新增】点击网页空白处时，隐藏站点切换的提示框
+                        if (!e.target.closest('.site-switch-btn')) {
+                            showSiteTooltip.value = false;
+                        }
                     });
 
                     try {
@@ -2218,7 +2257,7 @@ if (!takesSlot) {
                     groupSkillsByAgent, getSortedSkillsByLevel, getSolutionWarnings,
                     showBackToTop, scrollToTop,currentStatsData, allAgentsMaxPotentialData, getCellColor,
                     getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
-                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage, searchInputRef,
+                    backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage, searchInputRef,isStableSite, showSiteTooltip, siteTooltipText, handleSiteSwitch,
                     isTraditional, toggleLang, t
                 };
             }
