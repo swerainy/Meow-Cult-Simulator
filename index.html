@@ -287,15 +287,25 @@
         .update-banner button:hover { transform: scale(1.05); }
         @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 
-        /* 【修复】手机端靠左侧的按钮提示框出界问题 */
+        /* 【修复】手机端靠左侧的按钮提示框出界及卡住问题 */
         @media (max-width: 650px) {
             .site-switch-btn.tooltip-ui.tt-bottom::before {
                 left: 0; 
-                transform: translate(0, -5px); /* 取消向左偏移 50%，改为与按钮左侧对齐 */
+                transform: translate(0, -5px); 
             }
             .site-switch-btn.tooltip-ui.tt-bottom.show-tt::before, 
             .site-switch-btn.tooltip-ui.tt-bottom:hover::before {
                 transform: translate(0, 0);
+            }
+            
+            /* 手机端直接隐藏“简/繁”切换的提示框，防止点击后卡在屏幕上阻挡视线 */
+            .lang-switch-btn.tooltip-ui::before {
+                display: none !important;
+            }
+
+            .notice-badge.tooltip-ui:not(.show-tt):hover::before {
+                opacity: 0 !important;
+                visibility: hidden !important;
             }
         }
     </style>
@@ -320,7 +330,7 @@
                     🌐 {{ isStableSite ? t('稳定站') : t('最新站') }}
                 </button>
 
-                <button class="btn-small tooltip-ui tt-bottom" style="background: #2d3436; color: #fdcb6e; border: 1px solid #fdcb6e; padding: 4px 10px;" @click="toggleLang" :data-tooltip="t('切换简体/繁体中文')">
+                <button class="btn-small tooltip-ui tt-bottom lang-switch-btn" style="background: #2d3436; color: #fdcb6e; border: 1px solid #fdcb6e; padding: 4px 10px;" @click="toggleLang" :data-tooltip="t('切换简体/繁体中文')">
                     {{ isTraditional ? t('繁') : t('简') }}
                 </button>
                 <span style="font-size: 0.85rem;">{{ t('存档：') }}</span>
@@ -2164,7 +2174,7 @@ if (!takesSlot) {
                             }, 300);
                         }
                     });
-                    
+
                     try {
                         const s = localStorage.getItem('mijiao_v11_data');
                         if (s) {
