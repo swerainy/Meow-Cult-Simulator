@@ -37,7 +37,7 @@
         
         /* 按钮 */
         .btn-group { display: flex; gap: 8px; }
-        .btn-small { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease; }
+        .btn-small { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease; white-space: nowrap; }
         .btn-small:hover { filter: brightness(1.1); transform: translateY(-1px); }
         .btn-add { background: var(--success); color: white; }
         .btn-export { background: var(--info); color: white; }
@@ -226,6 +226,10 @@
 
         /* ====== 手机端多标签与双表格独立适配 ====== */
         @media (max-width: 650px) {
+
+            .btn-group { width: 100%; gap: 6px; }
+            .btn-small { padding: 6px 0 !important; font-size: 0.75rem !important; flex: 1; text-align: center; }
+            
             /* 标签页依然保持 2x2 网格 */
             .tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
             .tab-btn { padding: 10px 0; font-size: 0.85rem; width: 100%; }
@@ -689,7 +693,7 @@
                         <span style="font-size: 0.8rem; color: #8395a7; font-weight: bold;">
                             {{ t('目前已收录事件') }}：{{ cloudEvents.length }} {{ t('个') }}
                         </span>
-                        <input type="text" v-model="cloudTabSearchQuery" :placeholder="t('🔍 搜索云端事件...')" style="padding: 6px 12px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; width: 100%; max-width: 250px;">
+                        <input type="text" v-model="cloudTabSearchQuery" :placeholder="t('🔍 搜索云端事件(支持拼音首字母)')" style="padding: 6px 12px; border: 1px solid #dfe6e9; border-radius: 6px; outline: none; font-size: 0.85rem; width: 100%; max-width: 250px;">
                     </div>
                 </div>
                 
