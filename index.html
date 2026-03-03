@@ -186,7 +186,6 @@
         .tooltip-ui.tt-left::before { top: 50%; right: 120%; transform: translateY(-50%) translateX(5px); }
         .tooltip-ui.tt-left.show-tt::before, .tooltip-ui.tt-left:hover::before { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
 
-        /* ====== 【终极修复】手机端适配：全方位防止提示框溢出屏幕 ====== */
         @media (max-width: 650px) {
             /* 1. 基础限制：防止提示框宽度超过屏幕 */
             .tooltip-ui::before { 
@@ -329,6 +328,21 @@
         /* 彻底锁定推荐组合列宽度，防止超长组合导致翻页跳动 */
         .rec-cell { font-size: 0.75rem; color: var(--info); font-weight: bold; padding: 12px 8px !important; width: 140px !important; min-width: 140px !important; max-width: 140px !important; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+        /* 1. 只有难度时的同行样式：强制水平排列 */
+        .evt-layout-inline { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; flex-wrap: nowrap; }
+        .evt-layout-inline-search { display: flex; align-items: center; justify-content: flex-start; gap: 6px; flex-wrap: nowrap; }
+        
+        /* 2. 两个标签都在时的分行样式：强制垂直排列 */
+        .evt-layout-column { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 100%; }
+        .evt-layout-column-search { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+
+        .evt-name-span { 
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
+            font-weight: 800; color: #2d3436; display: inline-block; 
+            vertical-align: middle; max-width: 180px; 
+        }
+        .evt-badge-row { display: flex; gap: 4px; align-items: center; justify-content: center; flex-shrink: 0; }
+
         /* ====== 手机端多标签与双表格独立适配 ====== */
         @media (max-width: 650px) {
 
@@ -350,13 +364,15 @@
             .cloud-table { width: max-content !important; min-width: 100%; table-layout: auto !important; } 
             .cloud-table th, .cloud-table td { padding: 8px 10px !important; font-size: 0.8rem !important; white-space: nowrap !important; word-break: normal !important; }
             
-            /* 专属云端事件列样式：固定宽敞宽度防跳动，内部完美居中 */
-            .evt-name-td { width: 145px !important; min-width: 145px !important; max-width: 145px !important; padding: 8px 4px !important; text-align: center !important; }
-            .evt-name-td div { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; flex-wrap: nowrap !important; }
-            /* 名字超长保险及字体样式还原 */
-            .evt-name-span { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; color: #2d3436; }
-            .evt-name-td .diff-badge { transform: scale(0.85); margin: 0; display: inline-flex; flex-shrink: 0; }
-        }
+            .evt-name-td { width: 145px !important; min-width: 145px !important; max-width: 145px !important; padding: 6px 2px !important; }
+            
+            .evt-layout-inline .evt-name-span { max-width: 90px !important; }
+            .evt-layout-inline-search .evt-name-span { max-width: 130px !important; }
+            
+            .evt-layout-column .evt-name-span { max-width: 135px !important; }
+            .evt-layout-column-search .evt-name-span { max-width: 160px !important; }
+
+            .evt-name-td .diff-badge { transform: scale(0.82); margin: 0; }
 
         /* 电脑端默认宽度 */
         .th-agent { 
@@ -376,6 +392,7 @@
                 padding-left: 2px !important; 
                 padding-right: 2px !important;
             }
+        }
         }
 
         /* 智能更新提示条样式 */
@@ -474,10 +491,12 @@
                                 :class="{'focused': focusedSearchIndex === idx}"
                                 @mouseover="focusedSearchIndex = idx"
                                 @click="applyCloudEvent(ce)">
-                                <div style="display: flex; align-items: center;">
-                                    <strong>{{ t(ce.name) }}</strong>
-                                    <span v-if="getUnexpectedTask(ce.name)" class="diff-badge diff-unexpected" style="transform: scale(0.85); margin-left: 4px;">❗ {{ t('意外') }}</span>
-                                    <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]" style="transform: scale(0.85); margin-left: 4px;">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
+                                <div :class="getUnexpectedTask(ce.name) ? 'evt-layout-column-search' : 'evt-layout-inline-search'">
+                                    <strong :class="{'evt-name-span': !getUnexpectedTask(ce.name)}" :style="getUnexpectedTask(ce.name) ? '' : 'max-width: 150px;'">{{ t(ce.name) }}</strong>
+                                    <div class="evt-badge-row">
+                                        <span v-if="getUnexpectedTask(ce.name)" class="diff-badge diff-unexpected" style="transform: scale(0.85); margin: 0;">❗ {{ t('意外') }}</span>
+                                        <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]" style="transform: scale(0.85); margin: 0;">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
+                                    </div>
                                 </div>
                                 <span style="font-size: 0.7rem; color: #636e72;">({{ t('上场:') }}{{ ce.maxOnField }}{{ t('人') }})</span>
                             </li>
@@ -848,10 +867,12 @@
                         <tbody>
                             <tr v-for="ce in paginatedCloudData" :key="ce._id || ce.name">
                                 <td class="evt-name-td">
-                                    <div>
+                                    <div :class="getUnexpectedTask(ce.name) ? 'evt-layout-column' : 'evt-layout-inline'">
                                         <span class="evt-name-span" :title="t(ce.name)">{{ t(ce.name) }}</span>
-                                        <span v-if="getUnexpectedTask(ce.name)" class="diff-badge diff-unexpected tooltip-ui tt-down-right" :data-tooltip="t('该事件附带意外任务（两个选项满足其一即可）。算法推荐的方案已确保【主事件】与【意外任务】均能 100% 达成。')">❗ {{ t('意外') }}</span>
-                                        <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
+                                        <div class="evt-badge-row">
+                                            <span v-if="getUnexpectedTask(ce.name)" class="diff-badge diff-unexpected tooltip-ui tt-down-right" :data-tooltip="t('该事件附带意外任务（两个选项满足其一即可）。算法推荐的方案已确保【主事件】与【意外任务】均能 100% 达成。')">❗ {{ t('意外') }}</span>
+                                            <span :class="['diff-badge', getDifficulty(ce.req, ce.maxOnField).class]">{{ t(getDifficulty(ce.req, ce.maxOnField).label) }}</span>
+                                        </div>
                                     </div>
                                 </td>
                                 <td v-for="stat in displayStatKeys" :key="stat" style="font-weight: bold; color: #2d3436;">
@@ -2484,6 +2505,7 @@ if (!takesSlot) {
                     }
                 });
 
+                // 【核心修复】删除重复定义的变量，解决“应有 }”报错
                 return { 
                     tab, accounts, activeAccountIndex, currentAccount, unlockedBelievers, 
                     statKeys: STAT_KEYS, displayStatKeys: DISPLAY_STAT_KEYS, reqOptions: REQ_OPTIONS,
