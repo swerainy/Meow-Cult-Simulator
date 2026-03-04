@@ -926,7 +926,7 @@
                 <div class="card-body" v-show="isPanelExpanded">
                     
                     <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-                        <button v-if="!isRecording" class="btn-small btn-add" @click="startRecording" style="flex: 1; background: #e67e22; justify-content: center;">▶ {{ t('新轮次') }}</button>
+                        <button v-if="!isRecording" class="btn-small btn-add" @click="startRecording" style="flex: 1; background: #e67e22; justify-content: center;">▶ {{ t('开始记录新轮次') }}</button>
                         <button v-else class="btn-small btn-del" @click="stopRecording" style="flex: 1; background: #c0392b; justify-content: center;">⏹ {{ t('结束并保存') }}</button>
                         <button class="btn-small btn-export" @click="showHistory = !showHistory" style="background: #8e44ad;">📋 {{ t('历史') }}</button>
                     </div>
@@ -935,10 +935,10 @@
                         <span style="font-weight: bold; color: #e67e22; margin-right: 6px;">📝 {{ t('进度:') }}</span>
                         
                         <span v-for="(group, gIdx) in currentRecordEvents" :key="gIdx" style="display: inline-flex; align-items: center;">
-                            <span :style="group.length > 1 ? 'border: 2px solid #3498db; padding: 2px 6px; border-radius: 6px; background: #ebf5fb; display: inline-flex; align-items: center;' : 'display: inline-flex; align-items: center;'">
+                            <span :style="group.length > 1 ? 'border: 2px solid #e17055; padding: 2px 6px; border-radius: 6px; background: #fdf2e9; display: inline-flex; align-items: center;' : 'display: inline-flex; align-items: center;'">
                                 <span v-for="(evName, eIdx) in group" :key="eIdx" style="color: #d35400; font-weight: bold;">
                                     {{ t(evName) }}
-                                    <span v-if="eIdx < group.length - 1" style="color: #3498db; margin: 0 4px; font-weight: 900;">+</span>
+                                    <span v-if="eIdx < group.length - 1" style="color: #e17055; margin: 0 4px; font-weight: 900;">+</span>
                                 </span>
                             </span>
                             <span v-if="gIdx < currentRecordEvents.length - 1" style="color: #f39c12; margin: 0 4px; font-weight: bold;">➔</span>
@@ -2769,6 +2769,27 @@ if (!takesSlot) {
                     currentEvent.value.maxOnField = Number(ce.maxOnField) || 0;
                     searchQuery.value = ''; 
                     updateMainChart(); 
+
+                    // ====== 【恢复自动记录】并智能检测并行事件 ======
+                    if (isRecording.value) {
+                        // activeEventIndex 就是你当前选中的页签索引 (0是第一个，1是第二个...)
+                        if (activeEventIndex.value === 0) {
+                            // 在第 1 个页签操作，代表开始新的一步
+                            currentRecordEvents.value.push([ce.name]);
+                        } else {
+                            // 在第 2、3、4 个页签操作，代表正在并行处理
+                            if (currentRecordEvents.value.length > 0) {
+                                const lastGroup = currentRecordEvents.value[currentRecordEvents.value.length - 1];
+                                // 自动覆盖或追加到对应的位置
+                                lastGroup[activeEventIndex.value] = ce.name;
+                                // 清理可能产生的空洞数据
+                                currentRecordEvents.value[currentRecordEvents.value.length - 1] = lastGroup.filter(Boolean);
+                            } else {
+                                currentRecordEvents.value.push([ce.name]);
+                            }
+                        }
+                        saveCurrentRecordingState(); // 自动保存进度
+                    }
                 };
                 
                 // 【新增】键盘导航逻辑
