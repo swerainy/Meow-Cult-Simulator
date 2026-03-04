@@ -365,6 +365,58 @@
         .update-banner button:hover { transform: scale(1.05); }
         @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 
+        /* ====== 悬浮记录卡片样式 ====== */
+        .floating-record-card {
+            position: fixed;
+            z-index: 9999;
+            width: 320px;
+            max-width: 90vw;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            border: 1px solid #fae5d3;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: height 0.3s ease;
+        }
+        .drag-handle {
+            background: #fdf2e9;
+            padding: 8px 12px;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #fae5d3;
+            user-select: none;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        .card-body {
+            padding: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        /* ====== 丝滑展开/收起动画 ====== */
+        .smooth-slide-enter-active,
+        .smooth-slide-leave-active {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 使用平滑的贝塞尔曲线 */
+            max-height: 600px; /* 这个值只要比面板实际展开的高度大就可以 */
+            opacity: 1;
+            overflow: hidden !important;
+        }
+        .smooth-slide-enter-from,
+        .smooth-slide-leave-to {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            border-width: 0 !important;
+        }
     </style>
 </head>
 <body>
@@ -858,6 +910,83 @@
         <div class="back-to-top" ref="backToTopRef" :class="{ 'show': showBackToTop }" @click.stop="scrollToTop" :title="t('回到顶部')">
             ↑
         </div>
+
+        <div class="floating-record-card" :style="{ left: panelX + 'px', top: panelY + 'px' }">
+            <div class="drag-handle" @mousedown="startDrag" @touchstart.passive="startDrag">
+                <div style="font-size: 0.9rem; font-weight: bold; color: #d35400; display: flex; align-items: center; gap: 6px; pointer-events: none;">
+                    <span v-if="!isRecording">⏸️ {{ t('记录面板') }}</span>
+                    <span v-else>🔴 {{ t('轮次记录中...') }} <span style="background: #e67e22; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">已记 {{ currentRecordEvents.length }}</span></span>
+                </div>
+                <button @click="isPanelExpanded = !isPanelExpanded" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #e67e22; padding: 0;">
+                    {{ isPanelExpanded ? '▼' : '▲' }}
+                </button>
+            </div>
+
+            <transition name="smooth-slide">
+                <div class="card-body" v-show="isPanelExpanded">
+                    
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <button v-if="!isRecording" class="btn-small btn-add" @click="startRecording" style="flex: 1; background: #e67e22; justify-content: center;">▶ {{ t('新轮次') }}</button>
+                        <button v-else class="btn-small btn-del" @click="stopRecording" style="flex: 1; background: #c0392b; justify-content: center;">⏹ {{ t('结束并保存') }}</button>
+                        <button class="btn-small btn-export" @click="showHistory = !showHistory" style="background: #8e44ad;">📋 {{ t('历史') }}</button>
+                    </div>
+
+                    <div v-if="isRecording && currentRecordEvents.length > 0" style="margin-bottom: 12px; padding: 8px; background: #fffcf9; border: 1px dashed #f39c12; border-radius: 6px; font-size: 0.75rem; color: #636e72; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0;">
+                        <span style="font-weight: bold; color: #e67e22; margin-right: 6px;">📝 {{ t('进度:') }}</span>
+                        
+                        <span v-for="(group, gIdx) in currentRecordEvents" :key="gIdx" style="display: inline-flex; align-items: center;">
+                            <span :style="group.length > 1 ? 'border: 2px solid #3498db; padding: 2px 6px; border-radius: 6px; background: #ebf5fb; display: inline-flex; align-items: center;' : 'display: inline-flex; align-items: center;'">
+                                <span v-for="(evName, eIdx) in group" :key="eIdx" style="color: #d35400; font-weight: bold;">
+                                    {{ t(evName) }}
+                                    <span v-if="eIdx < group.length - 1" style="color: #3498db; margin: 0 4px; font-weight: 900;">+</span>
+                                </span>
+                            </span>
+                            <span v-if="gIdx < currentRecordEvents.length - 1" style="color: #f39c12; margin: 0 4px; font-weight: bold;">➔</span>
+                        </span>
+                    </div>
+
+                    <transition name="smooth-slide">
+                        <div v-show="showHistory" style="border-top: 1px solid #ecf0f1; padding-top: 10px; overflow: hidden;">
+                            
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; gap: 10px;">
+                                <button @click="exportHistory" class="btn-ghost" style="flex: 1; font-size: 0.75rem; padding: 4px 8px; border: 1px solid #27ae60; color: #27ae60; border-radius: 4px; background: transparent; cursor: pointer;">
+                                    💾 {{ t('导出记录为文本') }}
+                                </button>
+                                <button @click="clearHistory" class="btn-ghost" style="font-size: 0.75rem; padding: 4px 8px; border: 1px solid #d63031; color: #d63031; border-radius: 4px; background: #fff0f0; cursor: pointer;">
+                                    🗑️ {{ t('清空') }}
+                                </button>
+                            </div>
+
+                            <div v-if="eventHistory.length === 0" style="text-align: center; color: #b2bec3; font-size: 0.8rem;">
+                                {{ t('暂无记录') }}
+                            </div>
+
+                            <div v-for="(record, idx) in eventHistory" :key="record.time" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed #ecf0f1;">
+                                <div style="font-size: 0.8rem; font-weight: bold; color: #2d3436; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span>📍 {{ new Date(record.time).toLocaleString() }}</span>
+                                        <span style="font-size: 0.7rem; color: #e67e22; background: #fffcf9; padding: 2px 6px; border: 1px solid #fae5d3; border-radius: 4px; font-weight: normal;">
+                                            {{ t('记录事件：') }}{{ record.events.reduce((sum, g) => sum + g.length, 0) }}{{ t(' 个') }}
+                                        </span>
+                                    </div>
+                                    <button @click="deleteRecord(idx)" style="background: none; border: none; color: #d63031; cursor: pointer; font-size: 1.1rem; padding: 0;" :title="t('删除')">&times;</button>
+                                </div>
+                                
+                                <div style="margin-bottom: 8px; padding: 8px; background: #fffcf9; border: 1px dashed #f39c12; border-radius: 6px; font-size: 0.75rem; color: #636e72; line-height: 1.8;">
+                                    <span v-for="(evName, eIdx) in record.events" :key="eIdx">
+                                        <span style="color: #d35400; font-weight: bold;">{{ t(evName) }}</span>
+                                        <span v-if="eIdx < record.events.length - 1" style="color: #f39c12; margin: 0 4px;">➔</span>
+                                    </span>
+                                    <span v-if="record.events.length === 0" style="color: #b2bec3; font-style: italic;">{{ t('未记录事件') }}</span>
+                                </div>
+                                
+                                <div style="text-align: right;">
+                                    <button @click="resumeRecording(idx)" class="btn-ghost" style="padding: 2px 8px; font-size: 0.7rem; border: 1px solid #0984e3; color: #0984e3; background: transparent; border-radius: 4px; cursor: pointer;">📝 {{ t('继续记录') }}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </transition> </div>
+            </transition> </div>
     </div>
 
     <script>
@@ -872,6 +1001,202 @@
                 // 【新增】用于更新检测的变量
                 const hasNewVersion = ref(false);
                 let lastFileTag = null;
+
+                // ====== 【新增】事件记录 (轮次记录) 功能逻辑 ======
+                const isRecording = ref(false);
+                const currentRecordEvents = ref([]);
+                const eventHistory = ref([]);
+                const showHistory = ref(false);
+                const currentRecordTime = ref(null);
+
+                // ====== 【新增】将当前记录进度实时保存到本地 ======
+                const saveCurrentRecordingState = () => {
+                    localStorage.setItem('mijiao_v11_isRecording', isRecording.value);
+                    localStorage.setItem('mijiao_v11_current_events', JSON.stringify(currentRecordEvents.value));
+                    if (currentRecordTime.value) {
+                        localStorage.setItem('mijiao_v11_current_time', currentRecordTime.value.toString());
+                    } else {
+                        localStorage.removeItem('mijiao_v11_current_time');
+                    }
+                };
+
+                const startRecording = () => {
+                    isRecording.value = true;
+                    currentRecordEvents.value = [];
+                    currentRecordTime.value = Date.now();
+                    showHistory.value = false;
+                    saveCurrentRecordingState(); // 保存状态
+                };
+
+                const stopRecording = () => {
+                    if (currentRecordEvents.value.length > 0) {
+                        const newRecord = {
+                            time: currentRecordTime.value || Date.now(),
+                            events: [...currentRecordEvents.value]
+                        };
+                        eventHistory.value.unshift(newRecord);
+                        eventHistory.value.sort((a, b) => Number(b.time) - Number(a.time));
+                        localStorage.setItem('mijiao_v11_event_history', JSON.stringify(eventHistory.value));
+                    }
+                    isRecording.value = false;
+                    currentRecordTime.value = null;
+                    currentRecordEvents.value = []; // 清空当前进度
+                    saveCurrentRecordingState(); // 保存状态
+                };
+
+                const resumeRecording = (idx) => {
+                    if (isRecording.value) {
+                        alert(t('请先结束当前的轮次记录，再继续其他轮次！'));
+                        return;
+                    }
+                    const record = eventHistory.value.splice(idx, 1)[0];
+                    currentRecordEvents.value = [...record.events];
+                    currentRecordTime.value = record.time;
+                    isRecording.value = true;
+                    showHistory.value = false;
+                    localStorage.setItem('mijiao_v11_event_history', JSON.stringify(eventHistory.value));
+                    saveCurrentRecordingState(); // 保存状态
+                };
+
+                const recordManualEvent = () => {
+                    const currentBatch = events.value
+                        .map(ev => ev.name ? ev.name.trim() : '')
+                        .filter(name => name && !name.startsWith('事件 '));
+
+                    if (currentBatch.length === 0) {
+                        alert(t('当前面板没有有效的事件可以记入！请先选择或输入事件。'));
+                        return;
+                    }
+
+                    currentRecordEvents.value.push(currentBatch);
+                    saveCurrentRecordingState(); // 保存状态
+                };
+
+                // ====== 【新增】悬浮面板拖拽与展开状态 ======
+                const isPanelExpanded = ref(true); // 控制是否展开
+                const panelX = ref(10); // 默认 X 坐标
+                const panelY = ref(60); // 默认 Y 坐标
+
+                // 读取上次保存的位置
+                try {
+                    const savedPos = localStorage.getItem('mijiao_v11_panel_pos');
+                    if (savedPos) {
+                        const { x, y } = JSON.parse(savedPos);
+                        panelX.value = x;
+                        panelY.value = y;
+                    }
+                } catch(e) {}
+
+                let isDragging = false;
+                let startX, startY, initialX, initialY;
+
+                const startDrag = (e) => {
+                    // 如果点的是按钮或内部文字，不触发拖拽
+                    if (['button', 'span'].includes(e.target.tagName.toLowerCase()) && e.target.className !== 'drag-handle') return;
+                    
+                    isDragging = true;
+                    if (e.type === 'touchstart') {
+                        startX = e.touches[0].clientX;
+                        startY = e.touches[0].clientY;
+                    } else {
+                        startX = e.clientX;
+                        startY = e.clientY;
+                    }
+                    initialX = panelX.value;
+                    initialY = panelY.value;
+
+                    document.addEventListener('mousemove', drag);
+                    document.addEventListener('mouseup', stopDrag);
+                    document.addEventListener('touchmove', drag, { passive: false });
+                    document.addEventListener('touchend', stopDrag);
+                };
+
+                const drag = (e) => {
+                    if (!isDragging) return;
+                    if (e.type === 'touchmove') e.preventDefault(); // 防止手机端页面跟着滚动
+                    
+                    let clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+                    let clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+                    let newX = initialX + (clientX - startX);
+                    let newY = initialY + (clientY - startY);
+
+                    // 限制面板不要被拖出屏幕外
+                    const maxX = window.innerWidth - 80;
+                    const maxY = window.innerHeight - 50;
+                    panelX.value = Math.max(0, Math.min(newX, maxX));
+                    panelY.value = Math.max(0, Math.min(newY, maxY));
+                };
+
+                const stopDrag = () => {
+                    isDragging = false;
+                    document.removeEventListener('mousemove', drag);
+                    document.removeEventListener('mouseup', stopDrag);
+                    document.removeEventListener('touchmove', drag);
+                    document.removeEventListener('touchend', stopDrag);
+                    // 保存新位置
+                    localStorage.setItem('mijiao_v11_panel_pos', JSON.stringify({ x: panelX.value, y: panelY.value }));
+                };
+                
+                const deleteRecord = (idx) => {
+                    if (confirm(t('确定删除这条轮次记录吗？'))) {
+                        eventHistory.value.splice(idx, 1);
+                        localStorage.setItem('mijiao_v11_event_history', JSON.stringify(eventHistory.value));
+                    }
+                };
+
+                const clearHistory = () => {
+                    if (confirm(t('确定清空所有历史轮次记录吗？此操作不可恢复！'))) {
+                        eventHistory.value = [];
+                        localStorage.setItem('mijiao_v11_event_history', JSON.stringify(eventHistory.value));
+                    }
+                };
+
+                // ====== 【新增】导出历史记录为 txt 文件 ======
+                const exportHistory = () => {
+                    if (eventHistory.value.length === 0) {
+                        alert(t('暂无历史记录可导出！'));
+                        return;
+                    }
+
+                    // 1. 拼接文本内容
+                    let content = t('咪教模拟器 - 轮次记录导出') + '\n========================================\n\n';
+                    
+                    eventHistory.value.forEach((record, idx) => {
+                        const dateStr = new Date(record.time).toLocaleString();
+                        // 因为是从新到旧排序，算一下是第几轮（最早的排在后面是第1轮）
+                        const roundNum = eventHistory.value.length - idx; 
+                        
+                        content += `【${t('第')} ${roundNum} ${t('轮')}】 - ${dateStr}\n`;
+                        
+                        if (record.events.length > 0) {
+                            // 【修改】导出为文本当并行时的格式，例如：事件A ➔ [事件B + 事件C] ➔ 事件D
+                            content += record.events.map(group => {
+                                return group.length > 1 ? `[${group.map(ev => t(ev)).join(' + ')}]` : t(group[0]);
+                            }).join(' ➔ ');
+                        } else {
+                            content += t('（未记录事件）');
+                        }
+                        content += '\n\n----------------------------------------\n\n';
+                    });
+
+                    // 2. 生成文件并触发浏览器下载
+                    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    
+                    // 文件名加上当前时间戳，如 mijiao_records_1700000000.txt
+                    const timeStamp = new Date().getTime();
+                    link.download = `mijiao_records_${timeStamp}.txt`; 
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url); // 释放内存
+                };
+
+                const isParallelMode = ref(false);
 
                 // 核心：静默检查服务器上的文件是否被修改了
                 const checkUpdate = async () => {
@@ -2439,14 +2764,9 @@ if (!takesSlot) {
                 };
 
                 const applyCloudEvent = (ce) => {
-                    // 【修改】用 t() 函数包裹，如果当前是繁体模式，拉取下来时自动转成繁体填入输入框
                     currentEvent.value.name = t(ce.name);
-                    
-                    STAT_KEYS.forEach(k => {
-                        currentEvent.value.req[k] = Number(ce.req[k]) || 5;
-                    });
+                    STAT_KEYS.forEach(k => { currentEvent.value.req[k] = Number(ce.req[k]) || 5; });
                     currentEvent.value.maxOnField = Number(ce.maxOnField) || 0;
-                    
                     searchQuery.value = ''; 
                     updateMainChart(); 
                 };
@@ -2600,6 +2920,39 @@ if (!takesSlot) {
                     try { const savedTab = localStorage.getItem('mijiao_v11_tab'); if (['sim', 'roster', 'overview', 'cloud'].includes(savedTab)) tab.value = savedTab; } catch(e) {}
                     try { const f = localStorage.getItem('mijiao_v11_field'); if(f) { const parsedF = JSON.parse(f); if (Array.isArray(parsedF)) fieldNames.value = parsedF; } } catch(e) { fieldNames.value = []; }
 
+                    // ====== 读取并强制排序历史记录 ======
+                    try { 
+                        const historyStr = localStorage.getItem('mijiao_v11_event_history'); 
+                        if (historyStr) {
+                            const parsedHistory = JSON.parse(historyStr);
+                            
+                            // 【新增】把旧的 ['事件A', '事件B'] 结构，升级为 [['事件A'], ['事件B']]
+                            const normalizedHistory = parsedHistory.map(record => {
+                                const newEvents = record.events.map(ev => Array.isArray(ev) ? ev : [ev]);
+                                return { ...record, events: newEvents };
+                            });
+
+                            normalizedHistory.sort((a, b) => Number(b.time) - Number(a.time));
+                            eventHistory.value = normalizedHistory; 
+                        }
+                    } catch(e) {}
+
+                    // ====== 【新增】恢复网页刷新前的“当前记录状态” ======
+                    try { 
+                        const savedIsRecording = localStorage.getItem('mijiao_v11_isRecording'); 
+                        if (savedIsRecording === 'true') {
+                            isRecording.value = true;
+                            const savedEvents = localStorage.getItem('mijiao_v11_current_events');
+                            if (savedEvents) {
+                                currentRecordEvents.value = JSON.parse(savedEvents);
+                            }
+                            const savedTime = localStorage.getItem('mijiao_v11_current_time');
+                            if (savedTime) {
+                                currentRecordTime.value = Number(savedTime);
+                            }
+                        }
+                    } catch(e) {}
+
                     // 【修复】页面刚刷新加载完时，也使用 300ms
                     setTimeout(() => { 
                         initMainChart(); 
@@ -2658,7 +3011,8 @@ if (!takesSlot) {
                     showBackToTop, scrollToTop, currentStatsData, allAgentsMaxPotentialData, getCellColor,
                     getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
                     backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage, searchInputRef, isStableSite, showSiteTooltip, siteTooltipText, handleSiteSwitch, unexpectedTasks, getUnexpectedTask,
-                    isTraditional, toggleLang, t,
+                    isTraditional, toggleLang, t, isRecording, currentRecordEvents, eventHistory, showHistory, startRecording, stopRecording, recordManualEvent, deleteRecord, clearHistory, resumeRecording, isPanelExpanded, panelX, panelY, startDrag,
+                    exportHistory,
                 };
             }
         }).mount('#app');
