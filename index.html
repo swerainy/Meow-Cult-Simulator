@@ -457,10 +457,37 @@
                 min-width: 240px;
             }
         }
+
+        /* ====== 【新增】自定义输入弹窗样式 ====== */
+        .custom-prompt-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); z-index: 10000000;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        .custom-prompt-box {
+            background: white; padding: 20px; border-radius: 12px;
+            width: 85%; max-width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: promptPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes promptPop {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
     <div id="app" class="container">
+        <div v-if="showCustomPrompt" class="custom-prompt-overlay" @click.self="cancelPrompt">
+            <div class="custom-prompt-box">
+                <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 1rem; color: #2d3436;">{{ promptTitle }}</h3>
+                <input type="text" v-model="promptText" ref="promptInputRef" @keyup.enter="confirmPrompt" style="width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #dfe6e9; border-radius: 6px; font-size: 1rem; outline: none;" onfocus="this.style.borderColor='#74b9ff'" onblur="this.style.borderColor='#dfe6e9'">
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="btn-small" style="background: #b2bec3; color: white; padding: 8px 16px;" @click="cancelPrompt">{{ t('取消') }}</button>
+                    <button class="btn-small" style="background: var(--primary); color: white; padding: 8px 16px;" @click="confirmPrompt">{{ t('确定') }}</button>
+                </div>
+            </div>
+        </div>
         <div v-if="hasNewVersion" class="update-banner">
             ✨ {{ t('检测到有新版本更新！') }} 
             <button @click="reloadPage">{{ t('立即刷新体验') }}</button>
@@ -1306,9 +1333,9 @@
                     }
                 };
 
-                // 强制刷新并清理缓存
+                // 【修改】强制刷新机制，避免触发夸克浏览器的清空缓存Bug
                 const reloadPage = () => {
-                    window.location.reload(true); 
+                    window.location.href = window.location.href.split('?')[0] + '?_t=' + Date.now(); 
                 };
                 // 在 setup 顶部声明引用
                 const backToTopRef = ref(null);
@@ -1431,6 +1458,35 @@
                 const accounts = ref([]);
                 const activeAccountIndex = ref(0);
                 
+                // ====== 【新增】自定义弹窗逻辑 ======
+                const showCustomPrompt = ref(false);
+                const promptTitle = ref('');
+                const promptText = ref('');
+                const promptInputRef = ref(null);
+                let promptCallback = null;
+
+                const openPrompt = (title, defaultText, callback) => {
+                    promptTitle.value = title;
+                    promptText.value = defaultText || '';
+                    promptCallback = callback;
+                    showCustomPrompt.value = true;
+                    // 延迟等待 DOM 渲染后自动唤起软键盘
+                    nextTick(() => {
+                        if (promptInputRef.value) {
+                            promptInputRef.value.focus();
+                        }
+                    });
+                };
+
+                const confirmPrompt = () => {
+                    if (promptCallback) promptCallback(promptText.value);
+                    showCustomPrompt.value = false;
+                };
+
+                const cancelPrompt = () => {
+                    showCustomPrompt.value = false;
+                };
+
                 const events = ref([{ 
                     id: Date.now(), name: '事件 1', 
                     req: { '智慧':5, '魅力':5, '口才':5, '气运':5, '灵感':5, '体魄':5 }, 
@@ -2525,14 +2581,23 @@ if (!takesSlot) {
                     if(applied) { alert(t("多事件目标等级已全部同步！")); autoCalc(); }
                 };
 
-                const addAccount = () => { const n = prompt(t("请输入新的存档名称：")); if(n) { accounts.value.push({ name: n, agents: createDefaultAgents() }); activeAccountIndex.value = accounts.value.length - 1; } };
+                const addAccount = () => { 
+                    openPrompt(t("请输入新的存档名称："), "", (n) => {
+                        if(n && n.trim() !== '') { 
+                            accounts.value.push({ name: n.trim(), agents: createDefaultAgents() }); 
+                            activeAccountIndex.value = accounts.value.length - 1; 
+                        }
+                    });
+                };
                 
                 const renameAccount = () => {
                     if(!currentAccount.value) return;
-                    const newName = prompt(t("请输入新的存档名称："), currentAccount.value.name);
-                    if(newName && newName.trim() !== '') { currentAccount.value.name = newName.trim(); }
+                    openPrompt(t("请输入新的存档名称："), currentAccount.value.name, (newName) => {
+                        if(newName && newName.trim() !== '') { 
+                            currentAccount.value.name = newName.trim(); 
+                        }
+                    });
                 };
-                
                 const deleteAccount = () => confirm(t("确定要删除当前存档吗？")) && (accounts.value.splice(activeAccountIndex.value, 1), activeAccountIndex.value = 0);
                 const exportData = () => { const blob = new Blob([JSON.stringify(accounts.value)], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `save.json`; link.click(); };
                 const triggerImport = () => document.querySelector('input[type="file"]').click();
@@ -2984,7 +3049,11 @@ if (!takesSlot) {
                                             if (typeof exA.brotherhoodEnabled === 'undefined' && typeof defA.brotherhoodEnabled !== 'undefined') exA.brotherhoodEnabled = defA.brotherhoodEnabled;
                                             
                                             exA.base = { ...defA.base }; 
+                                            // ====== 【修复】防止极其古老的残缺存档导致代码崩溃清零 ======
+                                            if (!exA.skills) exA.skills = {};
+
                                             Object.keys(defA.skills).forEach(sName => {
+                                                // ... （中间原有的技能赋值代码保持不变） ...
                                                 if (!exA.skills[sName]) {
                                                     exA.skills[sName] = JSON.parse(JSON.stringify(defA.skills[sName])); 
                                                 } else {
@@ -3003,28 +3072,24 @@ if (!takesSlot) {
                                                 }
                                             });
 
-                                            //清理掉旧存档中存在，但最新默认代码中已经改名或废弃的旧技能
                                             Object.keys(exA.skills).forEach(oldSkill => {
-                                                if (!defA.skills[oldSkill]) {
-                                                    delete exA.skills[oldSkill]; // 果断删除旧技能
-                                                }
+                                                if (!defA.skills[oldSkill]) delete exA.skills[oldSkill]; 
                                             });
                                         }
                                     });
-
-                                    acc.agents.sort((a, b) => {
-                                        const indexA = defaultAgents.findIndex(def => def.name === a.name);
-                                        const indexB = defaultAgents.findIndex(def => def.name === b.name);
-                                        return indexA - indexB;
-                                    });
-
+                                    acc.agents.sort((a, b) => defaultAgents.findIndex(def => def.name === a.name) - defaultAgents.findIndex(def => def.name === b.name));
                                 });
                                 accounts.value = parsed;
                             } else throw new Error('Data format error');
                         } else {
                             accounts.value = [{ name: '默认存档', agents: createDefaultAgents() }];
                         }
-                    } catch(e) { accounts.value = [{ name: '默认存档', agents: createDefaultAgents() }]; }
+                    } catch(e) { 
+                        // ====== 【修复】不再静默吞噬旧存档 ======
+                        console.error('存档读取异常:', e);
+                        alert(t('检测到存档读取异常，已为您加载默认数据。如果您之前的存档消失，且曾导出过，请使用导入功能恢复。'));
+                        accounts.value = [{ name: '默认存档', agents: createDefaultAgents() }]; 
+                    }
                     
                     try { const savedEvents = localStorage.getItem('mijiao_v11_events'); if (savedEvents) { const parsedEvents = JSON.parse(savedEvents); if (Array.isArray(parsedEvents) && parsedEvents.length > 0) events.value = parsedEvents; } } catch(e) {}
                     try { const savedEventIdx = localStorage.getItem('mijiao_v11_active_event_idx'); if (savedEventIdx !== null) { const eIdx = parseInt(savedEventIdx, 10); if (!isNaN(eIdx) && eIdx >= 0 && eIdx < events.value.length) activeEventIndex.value = eIdx; } } catch(e) {}
@@ -3124,7 +3189,7 @@ if (!takesSlot) {
                     getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
                     backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage, searchInputRef, isStableSite, showSiteTooltip, siteTooltipText, handleSiteSwitch, unexpectedTasks, getUnexpectedTask,
                     isTraditional, toggleLang, t, isRecording, currentRecordEvents, eventHistory, showHistory, startRecording, stopRecording, recordManualEvent, deleteRecord, clearHistory, resumeRecording, isPanelExpanded, panelX, panelY, startDrag,
-                    exportHistory,showFindUs, toggleFindUs,
+                    exportHistory,showFindUs, toggleFindUs, showCustomPrompt, promptTitle, promptText, promptInputRef, confirmPrompt, cancelPrompt,
                 };
             }
         }).mount('#app');
