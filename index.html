@@ -417,6 +417,46 @@
             margin-bottom: 0 !important;
             border-width: 0 !important;
         }
+
+        /* ====== 【新增】“找到我们”悬浮面板样式 ====== */
+        .find-us-popover {
+            position: absolute;
+            top: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3436;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            border: 1px solid #636e72;
+            z-index: 9999999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 270px;
+        }
+        .find-us-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            display: block;
+            line-height: 1.4;
+        }
+        .find-us-link:hover {
+            background: rgba(255,255,255,0.15);
+            color: #a29bfe; /* 悬停时变成漂亮的浅紫色 */
+        }
+        @media (max-width: 650px) {
+            .find-us-popover {
+                left: 0;
+                transform: translateX(0); /* 手机端靠左对齐，防止超出屏幕 */
+                min-width: 240px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -431,6 +471,25 @@
                 <span class="notice-badge tooltip-ui tt-bottom" :class="{'show-tt': showNotice}" @click.stop="toggleNotice" :data-tooltip="t('⚠️ 注意事项：本网页数据保存在浏览器本地，请尽量避免在微信内直接打开，以免缓存被清理导致数据丢失。同时注意浏览器不要开启无痕模式。跨设备请务必使用「导出/导入」功能。')">{{ t('注意事项') }}</span>
             </div>
             <div class="account-controls">
+                <div class="find-us-container" style="position: relative;" @mouseenter="showFindUs = true" @mouseleave="showFindUs = false" @click.stop="toggleFindUs">
+                    <button class="btn-small" style="background: #2d3436; color: #a29bfe; border: 1px solid #a29bfe; padding: 4px 10px;">
+                        👋 {{ t('找到我们') }}
+                    </button>
+                    
+                    <transition name="list">
+                        <div v-show="showFindUs" class="find-us-popover" @click.stop>
+                            <a href="https://xhslink.com/m/3yFTF0E96XF" target="_blank" class="find-us-link">
+                                🏠 @麻圆（不识字版）
+                            </a>
+                            <a href="http://xhslink.com/o/1Kk64p85s4g" target="_blank" class="find-us-link">
+                                📺 {{ t('视频教学') }}
+                            </a>
+                            <a href="http://xhslink.com/o/65HhHpbXjyS" target="_blank" class="find-us-link">
+                                ✨ MaaYuan v2.1.1-beta.1 （公测版v1） 已更新🐱 咪教模拟器 功能！
+                            </a>
+                        </div>
+                    </transition>
+                </div>
                 <button class="btn-small tooltip-ui tt-bottom site-switch-btn" 
                         :class="{'show-tt': showSiteTooltip}"
                         style="background: #2d3436; color: #74b9ff; border: 1px solid #74b9ff; padding: 4px 10px;" 
@@ -911,13 +970,25 @@
             ↑
         </div>
 
-        <div class="floating-record-card" :style="{ left: panelX + 'px', top: panelY + 'px' }">
-            <div class="drag-handle" @mousedown="startDrag" @touchstart.passive="startDrag">
-                <div style="font-size: 0.9rem; font-weight: bold; color: #d35400; display: flex; align-items: center; gap: 6px; pointer-events: none;">
-                    <span v-if="!isRecording">⏸️ {{ t('记录面板') }}</span>
-                    <span v-else>🔴 {{ t('轮次记录中...') }} <span style="background: #e67e22; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">已记 {{ currentRecordEvents.length }}</span></span>
+        <div class="floating-record-card" :style="{ left: panelX + 'px', top: panelY + 'px', width: isPanelExpanded ? '320px' : 'max-content', borderRadius: isPanelExpanded ? '10px' : '30px', transition: 'border-radius 0.2s' }">
+            <div class="drag-handle" @mousedown="startDrag" @touchstart.passive="startDrag" :style="{ padding: isPanelExpanded ? '8px 12px' : '6px 16px', borderBottom: isPanelExpanded ? '1px solid #fae5d3' : 'none', minHeight: '36px' }">
+                
+                <div style="font-size: 0.85rem; font-weight: bold; color: #d35400; display: flex; align-items: center; gap: 6px; pointer-events: none;">
+                    
+                    <span v-if="!isRecording" style="display: flex; align-items: center; gap: 4px;">
+                        ⏸️ <span v-show="isPanelExpanded">{{ t('记录面板（点击右侧▼可收起）') }}</span>
+                    </span>
+                    
+                    <span v-else style="display: flex; align-items: center; gap: 4px;">
+                        🔴 <span v-show="isPanelExpanded">{{ t('记录中...') }}</span>
+                        <span style="background: #e67e22; color: white; padding: 2px 7px; border-radius: 12px; font-size: 0.75rem; display: inline-flex; align-items: center;">
+                            <span v-show="isPanelExpanded" style="margin-right: 3px;">{{ t('已记') }}</span> 
+                            {{ currentRecordEvents.reduce((sum, g) => sum + g.length, 0) }}
+                        </span>
+                    </span>
                 </div>
-                <button @click="isPanelExpanded = !isPanelExpanded" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #e67e22; padding: 0;">
+
+                <button @click="isPanelExpanded = !isPanelExpanded" style="background: none; border: none; cursor: pointer; font-size: 1.1rem; color: #e67e22; padding: 0; margin-left: 10px; display: flex; align-items: center; justify-content: center;">
                     {{ isPanelExpanded ? '▼' : '▲' }}
                 </button>
             </div>
@@ -972,10 +1043,15 @@
                                     <button @click="deleteRecord(idx)" style="background: none; border: none; color: #d63031; cursor: pointer; font-size: 1.1rem; padding: 0;" :title="t('删除')">&times;</button>
                                 </div>
                                 
-                                <div style="margin-bottom: 8px; padding: 8px; background: #fffcf9; border: 1px dashed #f39c12; border-radius: 6px; font-size: 0.75rem; color: #636e72; line-height: 1.8;">
-                                    <span v-for="(evName, eIdx) in record.events" :key="eIdx">
-                                        <span style="color: #d35400; font-weight: bold;">{{ t(evName) }}</span>
-                                        <span v-if="eIdx < record.events.length - 1" style="color: #f39c12; margin: 0 4px;">➔</span>
+                                <div style="margin-bottom: 8px; padding: 8px; background: #fffcf9; border: 1px dashed #f39c12; border-radius: 6px; font-size: 0.75rem; color: #636e72; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0;">
+                                    <span v-for="(group, gIdx) in record.events" :key="gIdx" style="display: inline-flex; align-items: center;">
+                                        <span :style="group.length > 1 ? 'border: 2px solid #e17055; padding: 2px 6px; border-radius: 6px; background: #fdf2e9; display: inline-flex; align-items: center;' : 'display: inline-flex; align-items: center;'">
+                                            <span v-for="(evName, eIdx) in group" :key="eIdx" style="color: #d35400; font-weight: bold;">
+                                                {{ t(evName) }}
+                                                <span v-if="eIdx < group.length - 1" style="color: #e17055; margin: 0 4px; font-weight: 900;">+</span>
+                                            </span>
+                                        </span>
+                                        <span v-if="gIdx < record.events.length - 1" style="color: #f39c12; margin: 0 4px; font-weight: bold;">➔</span>
                                     </span>
                                     <span v-if="record.events.length === 0" style="color: #b2bec3; font-style: italic;">{{ t('未记录事件') }}</span>
                                 </div>
@@ -998,6 +1074,17 @@
 
         createApp({
             setup() {
+
+                // ====== 【新增】找到我们 弹窗控制逻辑 ======
+                const showFindUs = ref(false);
+                const toggleFindUs = (e) => {
+                    // 如果是触屏设备（手机），点击时切换显示/隐藏
+                    if (window.matchMedia("(hover: none)").matches || 'ontouchstart' in window) {
+                        showFindUs.value = !showFindUs.value;
+                        e.preventDefault();
+                    }
+                };
+
                 // 【新增】用于更新检测的变量
                 const hasNewVersion = ref(false);
                 let lastFileTag = null;
@@ -2863,6 +2950,10 @@ if (!takesSlot) {
                         if (!e.target.closest('.site-switch-btn')) {
                             showSiteTooltip.value = false;
                         }
+
+                        if (!e.target.closest('.find-us-container')) {
+                            showFindUs.value = false;
+                        }
                     });
 
                     document.addEventListener('focusin', (e) => {
@@ -3033,7 +3124,7 @@ if (!takesSlot) {
                     getDifficulty, cloudTabSearchQuery, cloudCurrentPage, cloudTotalPages, paginatedCloudData, goToPage,
                     backToTopRef, cloudSortKey, cloudSortOrder, sortByCloud, getQuickRecommendation, hasNewVersion, reloadPage, searchInputRef, isStableSite, showSiteTooltip, siteTooltipText, handleSiteSwitch, unexpectedTasks, getUnexpectedTask,
                     isTraditional, toggleLang, t, isRecording, currentRecordEvents, eventHistory, showHistory, startRecording, stopRecording, recordManualEvent, deleteRecord, clearHistory, resumeRecording, isPanelExpanded, panelX, panelY, startDrag,
-                    exportHistory,
+                    exportHistory,showFindUs, toggleFindUs,
                 };
             }
         }).mount('#app');
