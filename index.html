@@ -1151,11 +1151,26 @@
                         eventHistory.value.unshift(newRecord);
                         eventHistory.value.sort((a, b) => Number(b.time) - Number(a.time));
                         localStorage.setItem('mijiao_v11_event_history', JSON.stringify(eventHistory.value));
+
+                        // ====== 【新增】静默将本次有效记录发送到云端进行规律分析 ======
+                        // 只有记录了 2 步以上的才有分析价值
+                        if (currentRecordEvents.value.length >= 2) {
+                            // 注意：替换为你自己的 Laf 接口地址
+                            fetch('http://139.196.7.207:16667/', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sequence: currentRecordEvents.value })
+                            }).catch(e => {
+                                // 静默失败，不打扰玩家
+                                console.log('上传分析数据失败', e);
+                            });
+                        }
+                        // ==============================================================
                     }
                     isRecording.value = false;
                     currentRecordTime.value = null;
-                    currentRecordEvents.value = []; // 清空当前进度
-                    saveCurrentRecordingState(); // 保存状态
+                    currentRecordEvents.value = []; 
+                    saveCurrentRecordingState(); 
                 };
 
                 const resumeRecording = (idx) => {
