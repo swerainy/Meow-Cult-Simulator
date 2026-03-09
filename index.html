@@ -1154,16 +1154,16 @@
 
                         // ====== 【新增】静默将本次有效记录发送到云端进行规律分析 ======
                         // 只有记录了 2 步以上的才有分析价值
-                        if (currentRecordEvents.value.length >= 2) {
-                            fetch('http://139.196.7.207:16667/uploadSequence', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ sequence: currentRecordEvents.value })
-                            }).catch(e => {
+                        //if (currentRecordEvents.value.length >= 2) {
+                        //    fetch('http://139.196.7.207:16667/uploadSequence', {
+                        //        method: 'POST',
+                        //        headers: { 'Content-Type': 'application/json' },
+                        //        body: JSON.stringify({ sequence: currentRecordEvents.value })
+                        //    }).catch(e => {
                                 // 静默失败，不打扰玩家
-                                console.log('上传分析数据失败', e);
-                            });
-                        }
+                        //        console.log('上传分析数据失败', e);
+                        //    });
+                        //}
                         // ==============================================================
                     }
                     isRecording.value = false;
